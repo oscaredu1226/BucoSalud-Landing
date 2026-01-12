@@ -1,0 +1,74 @@
+<app-navbar />
+
+<section class="pt-28 pb-20 bg-background">
+  <div class="container mx-auto px-4 sm:px-6 max-w-3xl">
+    <!-- Back button -->
+    <button
+      type="button"
+      (click)="goBack()"
+      class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/90 transition-colors mb-6"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"></path>
+        <path d="m12 19-7-7 7-7"></path>
+      </svg>
+      Volver
+    </button>
+
+    <h1 class="text-3xl md:text-4xl font-heading font-semibold text-foreground mb-6">
+      Términos del Servicio
+    </h1>
+
+    <p class="text-muted-foreground mb-6">
+      Al acceder y utilizar el sitio web de <strong>Renova Dental</strong>, aceptas cumplir con los siguientes
+      términos y condiciones. Si no estás de acuerdo con alguno de ellos, te recomendamos no utilizar este sitio.
+    </p>
+
+    <h2 class="text-xl font-semibold text-foreground mt-8 mb-3">
+      Uso del sitio
+    </h2>
+    <p class="text-muted-foreground">
+      El contenido de este sitio tiene fines informativos y no constituye asesoramiento médico ni diagnóstico.
+      El uso del sitio es bajo tu propia responsabilidad.
+    </p>
+
+    <h2 class="text-xl font-semibold text-foreground mt-8 mb-3">
+      Servicios y citas
+    </h2>
+    <p class="text-muted-foreground">
+      Las solicitudes de citas realizadas a través del sitio están sujetas a confirmación.
+      Renova Dental se reserva el derecho de reprogramar o cancelar citas según disponibilidad clínica.
+    </p>
+
+    <h2 class="text-xl font-semibold text-foreground mt-8 mb-3">
+      Propiedad intelectual
+    </h2>
+    <p class="text-muted-foreground">
+      Todo el contenido del sitio, incluyendo textos, imágenes, logotipos y diseño,
+      es propiedad de Renova Dental y no puede ser reproducido sin autorización previa.
+    </p>
+
+    <h2 class="text-xl font-semibold text-foreground mt-8 mb-3">
+      Limitación de responsabilidad
+    </h2>
+    <p class="text-muted-foreground">
+      Renova Dental no será responsable por daños directos o indirectos derivados del uso o imposibilidad
+      de uso del sitio web.
+    </p>
+
+    <h2 class="text-xl font-semibold text-foreground mt-8 mb-3">
+      Cambios en los términos
+    </h2>
+    <p class="text-muted-foreground">
+      Nos reservamos el derecho de modificar estos términos en cualquier momento.
+      Las modificaciones entrarán en vigor una vez publicadas en esta página.
+    </p>
+
+    <p class="text-muted-foreground mt-10 text-sm">
+      Última actualización: {{ currentYear }}
+    </p>
+  </div>
+</section>
+
+<app-footer />
