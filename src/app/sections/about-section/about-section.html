@@ -1,0 +1,92 @@
+<section id="nosotros" class="py-20 md:py-28 bg-secondary">
+  <div class="container mx-auto px-4 sm:px-6">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <!-- Content -->
+      <div>
+        <span class="text-primary-light font-medium text-sm uppercase tracking-wider">
+          Sobre Nosotros
+        </span>
+
+        <h2 class="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold text-secondary-foreground mt-3 mb-6">
+          Una Práctica Construida sobre la Comprensión
+        </h2>
+
+        <p class="text-secondary-foreground/80 text-lg leading-relaxed mb-6">
+          Renova Dental fue fundada con una misión singular: proporcionar rehabilitación dental excepcional para
+          sobrevivientes de cáncer. Sabemos que el camino a través del tratamiento del cáncer se extiende mucho
+          más allá de la remisión, y la salud oral es una parte crucial de la recuperación.
+        </p>
+
+        <p class="text-secondary-foreground/70 leading-relaxed mb-8">
+          Nuestra clínica está diseñada como un santuario—un espacio tranquilo y acogedor donde puedes
+          concentrarte en sanar. Desde nuestras salas de tratamiento especializadas hasta nuestro personal
+          cuidadosamente capacitado, cada elemento está diseñado para apoyar tus necesidades únicas con dignidad
+          y respeto.
+        </p>
+
+        <!-- Mission Statement -->
+        <div class="p-6 bg-secondary-foreground/10 rounded-xl border border-secondary-foreground/20">
+          <p class="text-secondary-foreground italic font-heading text-xl leading-relaxed">
+            "Nuestra misión es restaurar no solo sonrisas, sino confianza, comodidad y calidad de vida para cada
+            sobreviviente de cáncer que atendemos."
+          </p>
+          <p class="text-secondary-foreground/60 mt-3 text-sm">— El Equipo de Renova Dental</p>
+        </div>
+      </div>
+
+      <!-- Values Grid -->
+      <div class="grid sm:grid-cols-2 gap-4">
+        @for (value of values; track trackByTitle) {
+          <div
+            class="bg-secondary-foreground/5 rounded-xl p-6 border border-secondary-foreground/10 hover:bg-secondary-foreground/10 transition-colors"
+          >
+            <div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-4">
+              @switch (value.icon) {
+                @case ('heart') {
+                  <!-- Heart -->
+                  <svg class="w-6 h-6 text-primary-light" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path>
+                  </svg>
+                }
+                @case ('shield') {
+                  <!-- Shield -->
+                  <svg class="w-6 h-6 text-primary-light" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V6l8-3 8 3v7z"></path>
+                  </svg>
+                }
+                @case ('users') {
+                  <!-- Users -->
+                  <svg class="w-6 h-6 text-primary-light" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                }
+                @case ('award') {
+                  <!-- Award -->
+                  <svg class="w-6 h-6 text-primary-light" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="8" r="6"></circle>
+                    <path d="M15.5 14.5 17 22l-5-3-5 3 1.5-7.5"></path>
+                  </svg>
+                }
+              }
+            </div>
+
+            <h3 class="font-heading text-lg font-semibold text-secondary-foreground mb-2">
+              {{ value.title }}
+            </h3>
+
+            <p class="text-secondary-foreground/70 text-sm leading-relaxed">
+              {{ value.description }}
+            </p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

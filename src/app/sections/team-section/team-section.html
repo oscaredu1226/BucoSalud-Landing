@@ -1,0 +1,51 @@
+<section id="equipo" class="py-20 md:py-28 bg-[hsl(var(--primary-soft))]">
+  <div class="container mx-auto px-4 sm:px-6">
+    <!-- Section Header -->
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <span class="text-primary font-medium text-sm uppercase tracking-wider">Nuestro Equipo</span>
+
+      <h2 class="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground mt-3 mb-5">
+        Expertos que Entienden
+      </h2>
+
+      <p class="text-muted-foreground text-lg leading-relaxed">
+        Nuestro equipo multidisciplinario combina experiencia especializada con genuina compasión para sobrevivientes de cáncer.
+      </p>
+    </div>
+
+    <!-- Team Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      @for (member of team; track trackByName) {
+        <div
+          class="group bg-card rounded-xl p-6 shadow-card hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border border-border text-center"
+        >
+          <!-- Avatar -->
+          <div
+            class="w-24 h-24 rounded-full bg-gradient-to-br from-secondary to-primary mx-auto mb-5 flex items-center justify-center shadow-md"
+          >
+            <span class="text-2xl font-heading font-semibold text-primary-foreground">
+              {{ member.initials }}
+            </span>
+          </div>
+
+          <!-- Info -->
+          <h3 class="font-heading text-xl font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+            {{ member.name }}
+          </h3>
+
+          <p class="text-primary font-medium text-sm mb-3">
+            {{ member.role }}
+          </p>
+
+          <p class="text-xs text-muted-foreground mb-4 px-2 py-1.5 bg-muted rounded-full inline-block">
+            {{ member.expertise }}
+          </p>
+
+          <p class="text-muted-foreground text-sm leading-relaxed">
+            {{ member.bio }}
+          </p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

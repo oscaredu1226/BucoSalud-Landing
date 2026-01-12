@@ -1,0 +1,130 @@
+<!-- Floating Button -->
+<button
+  type="button"
+  (click)="toggleOpen()"
+  class="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-primary text-white shadow-lg hover:bg-[hsl(var(--primary-hover))]
+         transition-all duration-300 flex items-center justify-center hover:scale-105"
+  [attr.aria-label]="isOpen ? 'Cerrar chat' : 'Abrir chat'"
+>
+  @if (isOpen) {
+    <!-- X icon -->
+    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M18 6 6 18"></path>
+      <path d="M6 6l12 12"></path>
+    </svg>
+  } @else {
+    <!-- MessageCircle icon -->
+    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+    </svg>
+  }
+</button>
+
+<!-- Chat Panel -->
+<div
+  class="fixed bottom-24 right-5 z-50 w-[340px] max-w-[calc(100vw-40px)] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-bottom-right"
+  [class.opacity-100]="isOpen"
+  [class.scale-100]="isOpen"
+  [class.translate-y-0]="isOpen"
+  [class.opacity-0]="!isOpen"
+  [class.scale-95]="!isOpen"
+  [class.translate-y-4]="!isOpen"
+  [class.pointer-events-none]="!isOpen"
+  role="dialog"
+  aria-label="Asistente virtual"
+>
+  <!-- Header -->
+  <div class="bg-primary text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+        <!-- MessageCircle small -->
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+        </svg>
+      </div>
+      <div>
+        <h3 class="font-heading font-semibold text-sm">Asistente</h3>
+        <p class="text-xs text-white/80">En línea</p>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      (click)="close()"
+      class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+      aria-label="Cerrar chat"
+    >
+      <!-- X small -->
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 6 6 18"></path>
+        <path d="M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Messages Area -->
+  <div class="h-[280px] overflow-y-auto p-4 space-y-3 bg-gray-50">
+    @for (message of messages; track trackById) {
+      <div class="flex" [class.justify-start]="message.isBot" [class.justify-end]="!message.isBot">
+        <div
+          class="max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-line"
+          [class.bg-white]="message.isBot"
+          [class.text-foreground]="message.isBot"
+          [class.shadow-sm]="message.isBot"
+          [class.rounded-tl-sm]="message.isBot"
+          [class.bg-primary]="!message.isBot"
+          [class.text-white]="!message.isBot"
+          [class.rounded-tr-sm]="!message.isBot"
+        >
+          @if (message.kind === 'contact') {
+            <!-- Texto + link (WhatsApp) -->
+            <div class="whitespace-pre-line">
+              Puedes contactarnos a través de:
+
+              <br /><br />
+              📱 WhatsApp:
+              <a
+                href="https://wa.me/19999999999"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary underline hover:text-[hsl(var(--primary-hover))]"
+              >
+                +1 999 999 9999
+              </a>
+              <br />
+              📞 Teléfono: (555) 555-5555
+              <br />
+              ✉️ Email: contacto@tudominio.com
+              <br /><br />
+              El tiempo de respuesta típico es entre 5 y 30 minutos durante el horario de atención.
+            </div>
+          } @else {
+            {{ message.text }}
+          }
+        </div>
+      </div>
+    }
+    <div #messagesEnd></div>
+  </div>
+
+  <!-- Options Area -->
+  <div class="p-3 border-t border-gray-100 bg-white rounded-b-2xl">
+    <p class="text-xs text-muted-foreground mb-2 px-1">Selecciona una opción:</p>
+    <div class="flex flex-wrap gap-2">
+      @for (option of predefinedOptions; track option.id) {
+        <button
+          type="button"
+          (click)="handleOptionClick(option.id, option.label)"
+          class="px-3 py-1.5 text-xs font-medium bg-[hsl(var(--primary-soft))] text-primary rounded-full
+                 hover:bg-primary hover:text-white transition-colors duration-200"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+  </div>
+</div>

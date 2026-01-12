@@ -1,0 +1,115 @@
+<header class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+  <nav class="container mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16 md:h-20">
+      <!-- Logo -->
+      <a
+        href="#"
+        (click)="scrollToTop($event)"
+        class="flex items-center gap-2"
+      >
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+          <span class="text-primary-foreground font-heading font-bold text-lg">R</span>
+        </div>
+        <span class="font-heading text-xl font-semibold text-secondary hidden sm:block">
+          Renova Dental
+        </span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden lg:flex items-center gap-1">
+        @for (link of navLinks; track link.href) {
+          <button
+            type="button"
+            (click)="scrollToSection(link.href)"
+            class="px-4 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors rounded-lg hover:bg-muted"
+          >
+            {{ link.label }}
+          </button>
+        }
+      </div>
+
+      <!-- CTA Button (desktop/tablet) -->
+      <div class="hidden md:block">
+        <button
+          type="button"
+          (click)="scrollToSection('#cita')"
+          class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold
+                 bg-primary text-primary-foreground shadow-md hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-active))]
+                 transition-colors"
+        >
+          Agenda tu Cita
+        </button>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <button
+        type="button"
+        class="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+        (click)="toggleMenu()"
+        aria-label="Abrir menú"
+      >
+        @if (isOpen) {
+          <!-- X icon -->
+          <svg
+            class="h-6 w-6 text-secondary"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 6 6 18"></path>
+            <path d="M6 6l12 12"></path>
+          </svg>
+        } @else {
+          <!-- Menu icon -->
+          <svg
+            class="h-6 w-6 text-secondary"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 18h16"></path>
+          </svg>
+        }
+      </button>
+    </div>
+
+    <!-- Mobile Navigation -->
+    @if (isOpen) {
+      <div class="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex flex-col gap-1">
+          @for (link of navLinks; track link.href) {
+            <button
+              type="button"
+              (click)="scrollToSection(link.href)"
+              class="px-4 py-3 text-left text-base font-medium text-foreground hover:text-primary hover:bg-muted transition-colors rounded-lg"
+            >
+              {{ link.label }}
+            </button>
+          }
+
+          <div class="pt-3 mt-2 border-t border-border">
+            <button
+              type="button"
+              (click)="scrollToSection('#cita')"
+              class="w-full inline-flex items-center justify-center rounded-lg px-5 py-3 text-base font-semibold
+                     bg-primary text-primary-foreground shadow-md hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-active))]
+                     transition-colors"
+            >
+              Agenda tu Cita
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </nav>
+</header>

@@ -1,0 +1,166 @@
+<section id="cita" class="py-20 md:py-28 bg-background">
+  <div class="container mx-auto px-4 sm:px-6">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <!-- Content -->
+      <div>
+        <span class="text-primary font-medium text-sm uppercase tracking-wider">Agenda tu Cita</span>
+
+        <h2 class="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground mt-3 mb-5">
+          Comienza tu Camino hacia la Restauración
+        </h2>
+
+        <p class="text-muted-foreground text-lg leading-relaxed mb-8">
+          Da el primer paso para recuperar tu sonrisa. Programa una consulta gratuita donde escucharemos tu historia y discutiremos cómo podemos ayudarte.
+        </p>
+
+        <!-- Benefits -->
+        <div class="space-y-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-[hsl(var(--primary-soft))] flex items-center justify-center flex-shrink-0">
+              <!-- Calendar icon -->
+              <svg class="w-6 h-6 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 2v4"></path>
+                <path d="M16 2v4"></path>
+                <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                <path d="M3 10h18"></path>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-semibold text-foreground">Horarios Flexibles</h4>
+              <p class="text-sm text-muted-foreground">Citas disponibles por la mañana y tarde</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-[hsl(var(--primary-soft))] flex items-center justify-center flex-shrink-0">
+              <!-- Clock icon -->
+              <svg class="w-6 h-6 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-semibold text-foreground">Respuesta Rápida</h4>
+              <p class="text-sm text-muted-foreground">Te contactaremos en las próximas 24 horas</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div class="bg-card rounded-xl p-6 md:p-8 shadow-lg border border-border">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+          <div>
+            <label for="name" class="block text-sm font-medium text-foreground mb-2">
+              Nombre Completo *
+            </label>
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              class="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground
+                     focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+              placeholder="Tu nombre"
+            />
+            @if (hasError('name', 'required')) {
+              <p class="text-xs text-destructive mt-2">El nombre es obligatorio.</p>
+            }
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label for="email" class="block text-sm font-medium text-foreground mb-2">
+                Correo Electrónico *
+              </label>
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                class="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground
+                       focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                placeholder="tu@correo.com"
+              />
+              @if (hasError('email', 'required')) {
+                <p class="text-xs text-destructive mt-2">El correo es obligatorio.</p>
+              }
+              @if (hasError('email', 'email')) {
+                <p class="text-xs text-destructive mt-2">Ingresa un correo válido.</p>
+              }
+            </div>
+
+            <div>
+              <label for="phone" class="block text-sm font-medium text-foreground mb-2">
+                Teléfono *
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                inputmode="tel"
+                formControlName="phone"
+                class="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground
+                       focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                placeholder="(555) 000-0000"
+              />
+              @if (hasError('phone', 'required')) {
+                <p class="text-xs text-destructive mt-2">El teléfono es obligatorio.</p>
+              }
+            </div>
+          </div>
+
+          <div>
+            <label for="preferredDate" class="block text-sm font-medium text-foreground mb-2">
+              Fecha Preferida
+            </label>
+            <input
+              id="preferredDate"
+              type="date"
+              formControlName="preferredDate"
+              class="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground
+                     focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            />
+          </div>
+
+          <div>
+            <label for="message" class="block text-sm font-medium text-foreground mb-2">
+              Cuéntanos sobre tu situación (opcional)
+            </label>
+            <textarea
+              id="message"
+              rows="3"
+              formControlName="message"
+              class="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground
+                     focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-none"
+              placeholder="Comparte lo que desees que sepamos..."
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-base font-semibold
+                   bg-primary text-primary-foreground shadow-md hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-active))]
+                   transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            [disabled]="isSubmitting"
+          >
+            @if (isSubmitting) {
+              Enviando...
+            } @else {
+              Solicitar Consulta
+                <!-- Send icon -->
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m22 2-7 20-4-9-9-4 20-7Z"></path>
+                <path d="M22 2 11 13"></path>
+              </svg>
+            }
+          </button>
+
+          <p class="text-xs text-center text-muted-foreground">
+            Al enviar, aceptas nuestra política de privacidad. Nunca compartiremos tu información.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
