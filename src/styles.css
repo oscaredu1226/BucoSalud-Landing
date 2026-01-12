@@ -1,1 +1,108 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Healthcare Rehabilitation Color System */
+    --background: 0 0% 100%;
+    --foreground: 220 30% 38%;
+
+    /* Card Background #F7FBFB */
+    --card: 165 25% 98%;
+    --card-foreground: 220 30% 38%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 38%;
+
+    /* Primary #009695 */
+    --primary: 180 100% 29%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary #415A82 */
+    --secondary: 220 33% 38%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Primary Soft Background #E0F4F2 */
+    --muted: 172 50% 92%;
+    --muted-foreground: 220 25% 45%;
+
+    /* Accent uses primary */
+    --accent: 180 100% 29%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Error #E57C73 */
+    --destructive: 5 68% 67%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 20% 85%;
+    --input: 200 20% 85%;
+    --ring: 180 100% 29%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --primary-hover: 180 100% 25%;
+    --primary-active: 180 100% 21%;
+    --primary-light: 176 54% 45%;
+    --primary-soft: 172 50% 92%;
+    --primary-disabled: 176 42% 70%;
+
+    --secondary-dark: 220 33% 31%;
+    --secondary-light: 220 22% 53%;
+    --secondary-soft: 222 27% 95%;
+
+    --warning: 44 89% 75%;
+    --info: 220 22% 53%;
+    --success: 180 100% 29%;
+    --disabled: 200 18% 82%;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px hsl(220 30% 38% / 0.05);
+    --shadow-md: 0 4px 12px hsl(220 30% 38% / 0.08);
+    --shadow-lg: 0 8px 24px hsl(220 30% 38% / 0.1);
+    --shadow-xl: 0 16px 40px hsl(220 30% 38% / 0.12);
+    --shadow-card: 0 2px 8px hsl(220 30% 38% / 0.06);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .section-bg {
+    background-color: hsl(var(--primary-soft));
+  }
+
+  .card-bg {
+    @apply bg-card;
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-lg);
+  }
+}
