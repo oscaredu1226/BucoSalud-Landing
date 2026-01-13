@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import {Navbar} from '../../sections/navbar/navbar';
 import {Footer} from '../../sections/footer/footer';
+import {Meta, Title} from '@angular/platform-browser';
 
 
 @Component({
@@ -10,6 +11,14 @@ import {Footer} from '../../sections/footer/footer';
   templateUrl: './terms.component.html',
 })
 export class TermsComponent {
+  constructor(private title: Title, private meta: Meta) {
+    this.title.setTitle('Términos de Servicio | Renova Dental');
+    this.meta.updateTag({
+      name: 'description',
+      content:
+        'Revisa los términos y condiciones de uso del sitio web de Renova Dental, incluyendo servicios, citas y limitación de responsabilidad.',
+    });
+  }
   currentYear = new Date().getFullYear();
 
   goBack() {

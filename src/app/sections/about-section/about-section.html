@@ -36,7 +36,7 @@
 
       <!-- Values Grid -->
       <div class="grid sm:grid-cols-2 gap-4">
-        @for (value of values; track trackByTitle) {
+        @for (value of values; track value.title) {
           <div
             class="bg-secondary-foreground/5 rounded-xl p-6 border border-secondary-foreground/10 hover:bg-secondary-foreground/10 transition-colors"
           >

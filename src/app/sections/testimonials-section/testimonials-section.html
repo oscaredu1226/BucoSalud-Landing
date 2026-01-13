@@ -17,7 +17,7 @@
 
     <!-- Testimonials Grid -->
     <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
-      @for (testimonial of testimonials; track trackByIndex; let i = $index) {
+      @for (testimonial of testimonials; track $index; let i = $index) {
         <div
           class="bg-card rounded-xl p-8 shadow-card border border-border relative group hover:shadow-lg transition-all duration-200"
         >

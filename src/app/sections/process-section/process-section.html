@@ -15,7 +15,7 @@
 
     <!-- Process Steps -->
     <div class="max-w-4xl mx-auto">
-      @for (step of steps; track trackByNumber; let i = $index; let last = $last) {
+      @for (step of steps; track step.number; let i = $index; let last = $last) {
         <div class="relative flex gap-6 md:gap-8 pb-12" [class.pb-12]="!last" [class.pb-0]="last">
           <!-- Connector Line -->
           @if (!last) {

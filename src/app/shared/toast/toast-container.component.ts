@@ -13,11 +13,11 @@ import { ToastService } from './toast.service';
 
             <div class="flex-1">
               <p class="font-heading font-semibold text-foreground">
-                {{ toastService.toast?.title }}
+                {{ toastService.toast.title }}
               </p>
-              @if (toastService.toast?.description) {
+              @if (toastService.toast.description) {
                 <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  {{ toastService.toast?.description }}
+                  {{ toastService.toast.description }}
                 </p>
               }
             </div>

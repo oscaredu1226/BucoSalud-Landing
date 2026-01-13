@@ -19,7 +19,7 @@
     <div class="max-w-3xl mx-auto">
       <div class="bg-card rounded-xl shadow-card border border-border p-6 md:p-8">
         <div class="w-full">
-          @for (faq of faqs; track trackByIndex; let i = $index) {
+          @for (faq of faqs; track $index; let i = $index) {
             <div class="border-b border-border last:border-b-0">
               <!-- Trigger -->
               <button
