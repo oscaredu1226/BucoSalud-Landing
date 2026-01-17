@@ -1,36 +1,112 @@
-<section id="faq" class="py-20 md:py-28 bg-[hsl(var(--primary-soft))]">
-  <div class="container mx-auto px-4 sm:px-6">
-    <!-- Section Header -->
-    <div class="text-center max-w-2xl mx-auto mb-16">
-      <span class="text-primary font-medium text-sm uppercase tracking-wider">
-        Preguntas Frecuentes
-      </span>
+<section id="faq" class="relative py-20 md:py-28 bg-[hsl(var(--primary-soft))] overflow-hidden">
+  <!-- Decorative blob (solo estructura, usa tu primary-soft) -->
+  <div
+    class="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-3xl
+           bg-gradient-to-bl from-primary/20 to-transparent"
+    aria-hidden="true"
+  ></div>
 
-      <h2 class="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground mt-3 mb-5">
-        Preguntas Comunes
-      </h2>
+  <div class="container mx-auto px-4 sm:px-6 relative z-10">
+    <div class="grid lg:grid-cols-5 gap-12 lg:gap-16">
+      <!-- LEFT COLUMN (sticky) -->
+      <div class="lg:col-span-2 lg:sticky lg:top-28 lg:self-start">
+        <!-- Badge -->
+        <div
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4
+                 bg-card border border-border shadow-card"
+        >
+          <!-- HelpCircle icon inline -->
+          <svg
+            class="w-4 h-4 text-primary"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3"></path>
+            <path d="M12 17h.01"></path>
+          </svg>
 
-      <p class="text-muted-foreground text-lg leading-relaxed">
-        Entendemos que tienes preguntas. Aquí están las respuestas a lo que los pacientes preguntan con más frecuencia.
-      </p>
-    </div>
+          <span class="text-sm font-semibold text-primary tracking-wider uppercase">
+            FAQ
+          </span>
+        </div>
 
-    <!-- FAQ Accordion -->
-    <div class="max-w-3xl mx-auto">
-      <div class="bg-card rounded-xl shadow-card border border-border p-6 md:p-8">
-        <div class="w-full">
+        <!-- Title -->
+        <h2 class="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground mb-5">
+          Preguntas <span class="text-primary">Comunes</span>
+        </h2>
+
+        <!-- Description -->
+        <p class="text-muted-foreground text-lg leading-relaxed mb-8">
+          Entendemos que tienes preguntas. Aquí están las respuestas a lo que los pacientes preguntan con más frecuencia.
+        </p>
+
+        <!-- CTA card -->
+        <div class="bg-card rounded-xl shadow-card border border-border p-6">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <!-- MessageCircle icon inline -->
+              <svg
+                class="w-5 h-5 text-primary"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+              </svg>
+            </div>
+
+            <div>
+              <h4 class="font-heading font-semibold text-foreground mb-1">
+                ¿Aún tienes dudas?
+              </h4>
+              <p class="text-sm text-muted-foreground mb-4">
+                Nuestro equipo puede orientarte y ayudarte a elegir el siguiente paso.
+              </p>
+
+              <button
+                type="button"
+                (click)="scrollToSection('contacto')"
+                class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold
+                       bg-primary text-primary-foreground shadow-md
+                       hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-active))]
+                       transition-colors"
+              >
+                Contáctanos
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN (accordion) -->
+      <div class="lg:col-span-3">
+        <div class="space-y-4">
           @for (faq of faqs; track $index; let i = $index) {
-            <div class="border-b border-border last:border-b-0">
+            <div
+              class="bg-card rounded-xl shadow-card border border-border px-6
+                     transition-shadow duration-200 hover:shadow-lg"
+            >
               <!-- Trigger -->
               <button
                 type="button"
-                class="w-full py-4 flex items-center justify-between gap-4 text-left font-heading text-lg hover:text-primary transition-colors"
+                class="w-full py-6 flex items-center justify-between gap-4 text-left
+                       font-heading text-lg text-foreground hover:text-primary transition-colors"
                 (click)="toggle(i)"
                 [attr.aria-expanded]="openIndex === i"
               >
-                <span>{{ faq.question }}</span>
+                <span class="pr-2">{{ faq.question }}</span>
 
-                <!-- chevron -->
+                <!-- Chevron -->
                 <svg
                   class="h-5 w-5 text-foreground/60 transition-transform"
                   [class.rotate-180]="openIndex === i"
@@ -52,7 +128,7 @@
                 [style.gridTemplateRows]="openIndex === i ? '1fr' : '0fr'"
               >
                 <div class="overflow-hidden">
-                  <div class="pb-4 text-muted-foreground leading-relaxed">
+                  <div class="pb-6 text-muted-foreground leading-relaxed">
                     {{ faq.answer }}
                   </div>
                 </div>

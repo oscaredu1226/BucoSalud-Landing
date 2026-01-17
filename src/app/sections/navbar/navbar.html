@@ -1,19 +1,30 @@
 <header class="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
   <nav class="container mx-auto px-4 sm:px-6">
     <div class="flex items-center justify-between h-16 md:h-20">
-      <!-- Logo -->
       <a
         href="#"
         (click)="scrollToTop($event)"
         class="flex items-center gap-2"
       >
-        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-          <span class="text-primary-foreground font-heading font-bold text-lg">R</span>
-        </div>
-        <span class="font-heading text-xl font-semibold text-secondary hidden sm:block">
-          Renova Dental
+        <img
+          src="/assets/BucoPeru.png"
+          alt="BucoPerú"
+          class="h-10 w-auto object-contain"
+        />
+
+        <span class="hidden sm:flex flex-col leading-tight">
+          <span class=" font-medium text-secondary/70 tracking-wide">
+            Rehabilitación <span class="mx-1">|</span>
+          </span>
+          <span class="text-xs font-heading font-semibold text-secondary">
+            Bucomaxilofacial Perú
+          </span>
         </span>
+
       </a>
+
+
+
 
       <!-- Desktop Navigation -->
       <div class="hidden lg:flex items-center gap-1">
@@ -32,7 +43,7 @@
       <div class="hidden md:block">
         <button
           type="button"
-          (click)="scrollToSection('#cita')"
+          (click)="scrollToSection('#contacto')"
           class="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold
                  bg-primary text-primary-foreground shadow-md hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-active))]
                  transition-colors"

@@ -1,124 +1,105 @@
 <section class="relative min-h-screen flex items-center overflow-hidden">
   <!-- Background Image with Overlay -->
   <div class="absolute inset-0">
+    <!-- Fondo: SIN opacity -->
     <img
-      ngSrc="assets/hero-abstract.jpg"
+      ngSrc="/assets/doctor-consultation.jpg"
       alt="Rehabilitación dental profesional"
-      class="w-full h-full object-cover opacity-15"
-      height="1080" width="1920"/>
-    <div class="absolute inset-0 bg-gradient-to-br from-secondary/95 via-secondary/85 to-primary/70"></div>
+      class="w-full h-full object-cover"
+      height="1080"
+      width="1920"
+      priority
+    />
+
+    <!-- Overlay suavizado -->
+    <div
+      class="absolute inset-0 bg-gradient-to-br from-secondary/80 via-secondary/60 to-primary/40"
+    ></div>
   </div>
 
   <!-- Content -->
-  <div class="container relative z-10 mx-auto px-4 sm:px-6 pt-24 pb-16 md:pt-32 md:pb-24">
-    <div class="max-w-3xl">
-      <!-- Badge -->
-      <div
-        class="inline-flex items-center gap-2 px-4 py-2 bg-background/10 backdrop-blur-sm rounded-full border border-background/20 mb-8 animate-fade-in"
-      >
-        <!-- ShieldCheck icon (inline SVG) -->
-        <svg
-          class="w-4 h-4 text-primary-light"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
+  <div
+    class="container relative z-10 mx-auto px-4 sm:px-6 pt-24 pb-16 md:pt-32 md:pb-24"
+  >
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <!-- LEFT: Content -->
+      <div class="max-w-3xl order-2 lg:order-1">
+
+
+        <!-- Headline -->
+        <h1
+          class="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-background leading-tight mb-6 animate-fade-in"
         >
-          <path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V6l8-3 8 3v7z"></path>
-          <path d="m9 12 2 2 4-4"></path>
-        </svg>
+          Recupera tu Sonrisa,
+          <br />
+          <span class="text-primary-light">Recupera tu Vida</span>
+        </h1>
 
-        <span class="text-sm font-medium text-background/90">
-          Especialistas en Rehabilitación Bucomaxilofacial
-        </span>
-      </div>
-
-      <!-- Headline -->
-      <h1
-        class="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-background leading-tight mb-6 animate-fade-in"
-        style="animation-delay: 0.1s"
-      >
-        Recupera tu Sonrisa,
-        <br />
-        <span class="text-primary-light">Recupera tu Vida</span>
-      </h1>
-
-      <!-- Subheadline -->
-      <p
-        class="text-lg sm:text-xl text-background/80 leading-relaxed max-w-2xl mb-10 animate-fade-in"
-        style="animation-delay: 0.2s"
-      >
-        Somos especialistas en rehabilitación oral para pacientes oncológicos y con necesidades
-        bucomaxilofaciales. Ofrecemos atención compasiva y personalizada para devolverte la confianza
-        en tu sonrisa.
-      </p>
-
-      <!-- CTAs -->
-      <div class="flex flex-col sm:flex-row gap-4 animate-fade-in" style="animation-delay: 0.3s">
-        <!-- Primary button -->
-        <button
-          type="button"
-          (click)="scrollToSection('cita')"
-          class="group inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-base font-semibold
-                 bg-primary text-primary-foreground shadow-md hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-active))]
-                 transition-colors"
+        <!-- Subheadline -->
+        <p
+          class="text-lg sm:text-xl text-background/80 leading-relaxed max-w-2xl mb-10 animate-fade-in"
         >
-          Agenda tu Consulta
-          <!-- ArrowRight icon (inline SVG) -->
-          <svg
-            class="w-5 h-5 transition-transform group-hover:translate-x-1"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
+          Somos especialistas en rehabilitación oral para pacientes oncológicos y con necesidades
+          bucomaxilofaciales. Ofrecemos atención compasiva y personalizada para devolverte la
+          confianza en tu sonrisa.
+        </p>
+
+        <!-- CTAs -->
+        <div class="flex flex-col sm:flex-row gap-4 animate-fade-in">
+          <button
+            type="button"
+            (click)="scrollToSection('contacto')"
+            class="group inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-base font-semibold
+                   bg-primary text-primary-foreground shadow-md hover:bg-[hsl(var(--primary-hover))]
+                   transition-colors"
           >
-            <path d="M5 12h14"></path>
-            <path d="m13 5 7 7-7 7"></path>
-          </svg>
-        </button>
+            Agenda tu Consulta
+            <svg
+              class="w-5 h-5 transition-transform group-hover:translate-x-1"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14"></path>
+              <path d="m13 5 7 7-7 7"></path>
+            </svg>
+          </button>
 
-        <!-- Outline button -->
-        <button
-          type="button"
-          (click)="scrollToSection('proceso')"
-          class="inline-flex items-center justify-center rounded-lg px-6 py-3 text-base font-semibold
-                 border border-background/30 text-background hover:bg-background/10
-                 transition-colors"
-        >
-          Conoce Nuestro Proceso
-        </button>
-      </div>
+          <button
+            type="button"
+            (click)="scrollToSection('proceso')"
+            class="inline-flex items-center justify-center rounded-lg px-6 py-3 text-base font-semibold
+                   border border-background/30 text-background hover:bg-background/10 transition-colors"
+          >
+            Conoce Nuestro Proceso
+          </button>
+        </div>
 
-      <!-- Trust Indicators -->
-      <div class="mt-12 pt-8 border-t border-background/10 animate-fade-in" style="animation-delay: 0.4s">
-        <div class="grid grid-cols-3 gap-8">
-          <div>
-            <div class="text-3xl sm:text-4xl font-heading font-semibold text-background">15+</div>
-            <div class="text-sm text-background/60 mt-1">Años de Experiencia</div>
-          </div>
-          <div>
-            <div class="text-3xl sm:text-4xl font-heading font-semibold text-background">2,000+</div>
-            <div class="text-sm text-background/60 mt-1">Pacientes Atendidos</div>
-          </div>
-          <div>
-            <div class="text-3xl sm:text-4xl font-heading font-semibold text-background">98%</div>
-            <div class="text-sm text-background/60 mt-1">Tasa de Satisfacción</div>
+        <!-- Stats -->
+        <div class="mt-12 pt-8 border-t border-background/10 animate-fade-in">
+          <div class="grid grid-cols-3 gap-8">
+            <div>
+              <div class="text-3xl sm:text-4xl font-heading font-semibold text-background">15+</div>
+              <div class="text-sm text-background/60">Años de Experiencia</div>
+            </div>
+            <div>
+              <div class="text-3xl sm:text-4xl font-heading font-semibold text-background">
+                2,000+
+              </div>
+              <div class="text-sm text-background/60">Pacientes Atendidos</div>
+            </div>
+            <div>
+              <div class="text-3xl sm:text-4xl font-heading font-semibold text-background">98%</div>
+              <div class="text-sm text-background/60">Tasa de Satisfacción</div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Scroll Indicator -->
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce hidden md:block">
-    <div class="w-6 h-10 rounded-full border-2 border-background/30 flex items-start justify-center p-2">
-      <div class="w-1.5 h-3 bg-background/50 rounded-full"></div>
+
     </div>
   </div>
 </section>

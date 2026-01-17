@@ -1,91 +1,192 @@
-<section id="nosotros" class="py-20 md:py-28 bg-secondary">
-  <div class="container mx-auto px-4 sm:px-6">
-    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-      <!-- Content -->
-      <div>
-        <span class="text-primary-light font-medium text-sm uppercase tracking-wider">
+<section id="nosotros" class="py-20 md:py-28 bg-secondary relative overflow-hidden">
+  <!-- Background Image Overlay -->
+  <div class="absolute inset-0 opacity-10">
+    <img
+      [src]="clinicImage"
+      alt=""
+      class="w-full h-full object-cover"
+      aria-hidden="true"
+    />
+  </div>
+
+  <div class="container relative z-10 mx-auto px-4 sm:px-6">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+      <!-- IMAGE + STATS -->
+      <div class="relative max-w-xl mx-auto lg:mx-0">
+        <!-- Image -->
+        <div class="relative rounded-2xl overflow-hidden shadow-xl">
+          <div class="aspect-[4/3]">
+            <img
+              [src]="clinicImage"
+              alt="Clínica Renova Dental"
+              class="w-full h-full object-cover"
+            />
+          </div>
+
+          <!-- Soft overlay (mantiene tu estilo) -->
+          <div class="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent"></div>
+        </div>
+
+        <!-- Stats Card (pegada al borde derecho como referencia) -->
+        <div
+          class="absolute -bottom-10 right-6 lg:-right-10
+                 bg-background rounded-xl shadow-lg border border-border
+                 px-6 py-5 w-[320px] max-w-[90%]"
+        >
+          <div class="grid grid-cols-2 gap-x-8 gap-y-4 text-center">
+            <div>
+              <p class="text-2xl font-heading font-semibold text-primary">15+</p>
+              <p class="text-xs text-muted-foreground">Años de experiencia</p>
+            </div>
+            <div>
+              <p class="text-2xl font-heading font-semibold text-primary">2,000+</p>
+              <p class="text-xs text-muted-foreground">Pacientes atendidos</p>
+            </div>
+            <div>
+              <p class="text-2xl font-heading font-semibold text-primary">98%</p>
+              <p class="text-xs text-muted-foreground">Satisfacción</p>
+            </div>
+            <div>
+              <p class="text-2xl font-heading font-semibold text-primary">4.9</p>
+              <p class="text-xs text-muted-foreground">Calificación</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- espacio extra para que el card no choque con la siguiente sección -->
+        <div class="h-10"></div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="pt-10 lg:pt-0">
+        <!-- Badge bien visible -->
+        <span
+          class="inline-flex items-center mb-5 px-4 py-1.5 rounded-full
+                 border border-secondary-foreground/25
+                 bg-secondary-foreground/5
+                 text-secondary-foreground/80
+                 text-xs font-semibold uppercase tracking-wider"
+        >
           Sobre Nosotros
         </span>
 
-        <h2 class="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold text-secondary-foreground mt-3 mb-6">
+        <h2
+          class="font-heading text-3xl sm:text-4xl md:text-5xl
+                 font-semibold text-secondary-foreground mb-5 max-w-xl"
+        >
           Una Práctica Construida sobre la Comprensión
         </h2>
 
-        <p class="text-secondary-foreground/80 text-lg leading-relaxed mb-6">
-          Renova Dental fue fundada con una misión singular: proporcionar rehabilitación dental excepcional para
-          sobrevivientes de cáncer. Sabemos que el camino a través del tratamiento del cáncer se extiende mucho
-          más allá de la remisión, y la salud oral es una parte crucial de la recuperación.
+        <!-- Textos con ancho controlado para que no se estiren feo -->
+        <p class="text-secondary-foreground/80 text-lg leading-relaxed mb-5 max-w-xl">
+          Renova Dental fue fundada con una misión singular: proporcionar rehabilitación dental
+          excepcional para sobrevivientes de cáncer. Sabemos que el camino del tratamiento se extiende
+          mucho más allá de la remisión.
         </p>
 
-        <p class="text-secondary-foreground/70 leading-relaxed mb-8">
-          Nuestra clínica está diseñada como un santuario—un espacio tranquilo y acogedor donde puedes
-          concentrarte en sanar. Desde nuestras salas de tratamiento especializadas hasta nuestro personal
-          cuidadosamente capacitado, cada elemento está diseñado para apoyar tus necesidades únicas con dignidad
-          y respeto.
-        </p>
 
-        <!-- Mission Statement -->
-        <div class="p-6 bg-secondary-foreground/10 rounded-xl border border-secondary-foreground/20">
-          <p class="text-secondary-foreground italic font-heading text-xl leading-relaxed">
-            "Nuestra misión es restaurar no solo sonrisas, sino confianza, comodidad y calidad de vida para cada
-            sobreviviente de cáncer que atendemos."
+        <!-- Mission -->
+        <div
+          class="p-6 rounded-xl border border-secondary-foreground/20
+                 bg-secondary-foreground/10 max-w-xl"
+        >
+          <p class="text-secondary-foreground italic font-heading text-lg leading-relaxed">
+            "Nuestra misión es restaurar no solo sonrisas, sino confianza, comodidad y calidad de vida
+            para cada sobreviviente de cáncer que atendemos."
           </p>
-          <p class="text-secondary-foreground/60 mt-3 text-sm">— El Equipo de Renova Dental</p>
+          <p class="text-secondary-foreground/60 mt-3 text-sm">
+            — El Equipo de Renova Dental
+          </p>
         </div>
-      </div>
 
-      <!-- Values Grid -->
-      <div class="grid sm:grid-cols-2 gap-4">
-        @for (value of values; track value.title) {
-          <div
-            class="bg-secondary-foreground/5 rounded-xl p-6 border border-secondary-foreground/10 hover:bg-secondary-foreground/10 transition-colors"
-          >
-            <div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-4">
-              @switch (value.icon) {
-                @case ('heart') {
-                  <!-- Heart -->
-                  <svg class="w-6 h-6 text-primary-light" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path>
-                  </svg>
+        <!-- Values (cards sólidas para que se vean los íconos y el texto) -->
+        <div class="grid sm:grid-cols-2 gap-4 mt-10 max-w-2xl">
+          @for (value of values; track value.title) {
+            <div
+              class="bg-card rounded-xl p-5 shadow-card border border-border
+                     hover:shadow-lg transition-all duration-200"
+            >
+              <div
+                class="w-11 h-11 rounded-lg bg-primary/20
+                       flex items-center justify-center mb-3"
+              >
+                <!-- TU SWITCH ORIGINAL VA AQUÍ (SIN CAMBIOS) -->
+                @switch (value.icon) {
+                  @case ('heart') {
+                    <svg
+                      class="w-6 h-6 text-primary-light"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"
+                      ></path>
+                    </svg>
+                  }
+                  @case ('shield') {
+                    <svg
+                      class="w-6 h-6 text-primary-light"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z"></path>
+                    </svg>
+                  }
+                  @case ('users') {
+                    <svg
+                      class="w-6 h-6 text-primary-light"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  }
+                  @case ('award') {
+                    <svg
+                      class="w-6 h-6 text-primary-light"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="8" r="6"></circle>
+                      <path d="M15.5 14.5 18 22l-6-3-6 3 2.5-7.5"></path>
+                    </svg>
+                  }
                 }
-                @case ('shield') {
-                  <!-- Shield -->
-                  <svg class="w-6 h-6 text-primary-light" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V6l8-3 8 3v7z"></path>
-                  </svg>
-                }
-                @case ('users') {
-                  <!-- Users -->
-                  <svg class="w-6 h-6 text-primary-light" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                }
-                @case ('award') {
-                  <!-- Award -->
-                  <svg class="w-6 h-6 text-primary-light" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="8" r="6"></circle>
-                    <path d="M15.5 14.5 17 22l-5-3-5 3 1.5-7.5"></path>
-                  </svg>
-                }
-              }
+              </div>
+
+              <h3 class="font-heading text-base font-semibold text-foreground mb-1">
+                {{ value.title }}
+              </h3>
+              <p class="text-muted-foreground text-sm leading-relaxed">
+                {{ value.description }}
+              </p>
             </div>
-
-            <h3 class="font-heading text-lg font-semibold text-secondary-foreground mb-2">
-              {{ value.title }}
-            </h3>
-
-            <p class="text-secondary-foreground/70 text-sm leading-relaxed">
-              {{ value.description }}
-            </p>
-          </div>
-        }
+          }
+        </div>
       </div>
     </div>
   </div>

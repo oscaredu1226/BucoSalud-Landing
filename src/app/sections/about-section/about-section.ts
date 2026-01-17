@@ -13,6 +13,8 @@ type ValueItem = {
   templateUrl: './about-section.html',
 })
 export class AboutSection {
+  clinicImage = 'assets/clinic-interior.jpg';
+
   values: ValueItem[] = [
     {
       icon: 'heart',
@@ -40,6 +42,5 @@ export class AboutSection {
     },
   ];
 
-  trackByTitle = (_: number, item: ValueItem) => item.title;
-
+  trackByTitle = (_: number, v: ValueItem) => v.title;
 }

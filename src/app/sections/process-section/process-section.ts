@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 type Step = {
   number: string;
-  icon: 'messageCircleHeart' | 'clipboardList' | 'calendarCheck' | 'sparkles';
+  icon: 'message' | 'clipboard' | 'calendar' | 'sparkles';
   title: string;
   description: string;
   highlight: string;
@@ -15,7 +15,7 @@ export class ProcessSection {
   steps: Step[] = [
     {
       number: '01',
-      icon: 'messageCircleHeart',
+      icon: 'message',
       title: 'Consulta Inicial',
       description:
         'Comenzamos con una conversación empática para entender tu historia, preocupaciones y objetivos. Sin presión, solo escuchando.',
@@ -23,7 +23,7 @@ export class ProcessSection {
     },
     {
       number: '02',
-      icon: 'clipboardList',
+      icon: 'clipboard',
       title: 'Evaluación Integral',
       description:
         'Una evaluación exhaustiva de salud oral con imágenes avanzadas, coordinando con tu equipo oncológico cuando sea necesario.',
@@ -31,7 +31,7 @@ export class ProcessSection {
     },
     {
       number: '03',
-      icon: 'calendarCheck',
+      icon: 'calendar',
       title: 'Plan de Tratamiento Personalizado',
       description:
         'Juntos, creamos un plan de rehabilitación personalizado que respeta tu ritmo, presupuesto y consideraciones de salud.',
@@ -47,10 +47,12 @@ export class ProcessSection {
     },
   ];
 
-  trackByNumber = (_: number, s: Step) => s.number;
-
   scrollToSection(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    const el = document.querySelector(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   }
 
+  firstWord(title: string): string {
+    return title.split(' ')[0] ?? title;
+  }
 }

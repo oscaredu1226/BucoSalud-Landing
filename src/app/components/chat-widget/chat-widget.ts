@@ -94,7 +94,7 @@ export class ChatWidget {
     if (optionId === 'reservations') {
       setTimeout(() => {
         const reservationsSection =
-          document.getElementById('reservations') ||
+          document.getElementById('contacto') ||
           document.getElementById('booking') ||
           document.getElementById('cita') ||
           document.querySelector('[id*="reserv"]') ||
@@ -110,7 +110,6 @@ export class ChatWidget {
   }
 
   private scrollToBottomSoon() {
-    // espera a que Angular pinte el DOM
     setTimeout(() => {
       this.messagesEnd?.nativeElement?.scrollIntoView({ behavior: 'smooth' });
     }, 0);

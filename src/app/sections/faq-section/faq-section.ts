@@ -1,9 +1,13 @@
 import { Component } from '@angular/core';
-type Faq = { question: string; answer: string };
 
+type Faq = {
+  question: string;
+  answer: string;
+};
 
 @Component({
   selector: 'app-faq-section',
+  standalone: true,
   imports: [],
   templateUrl: './faq-section.html',
 })
@@ -44,13 +48,21 @@ export class FaqSection {
     },
   ];
 
-  /** accordion single+collapsible */
-  openIndex: number | null = 0; // puedes poner null si quieres todo cerrado al inicio
+  /** Accordion single + collapsible */
+  openIndex: number | null = 0;
 
-  toggle(index: number) {
+  toggle(index: number): void {
     this.openIndex = this.openIndex === index ? null : index;
   }
 
-  trackByIndex = (i: number) => i;
+  trackByIndex(index: number): number {
+    return index;
+  }
 
+  scrollToSection(id: string): void {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
 }
