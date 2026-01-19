@@ -44,7 +44,7 @@ export class ContactSection {
     {
       icon: 'clock',
       title: 'Horarios',
-      lines: ['Lun-Jue: 8am - 6pm', 'Vie: 8am - 4pm', 'Sáb: Con cita previa'],
+      lines: ['Lun-Jue: 3pm - 8pm'],
     },
     {
       icon: 'mapPin',

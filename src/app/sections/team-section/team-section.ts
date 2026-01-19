@@ -16,35 +16,27 @@ type TeamMember = {
 export class TeamSection {
   team: TeamMember[] = [
     {
-      name: 'Dra. Elena Vásquez',
-      role: 'Fundadora y Prostodoncista Principal',
-      expertise: 'Prótesis Maxilofaciales, Rehabilitación con Implantes',
-      bio: 'Prostodoncista certificada con 18 años especializándose en reconstrucción dental relacionada con oncología.',
-      initials: 'EV',
-    },
-    {
-      name: 'Dr. Miguel Rodríguez',
-      role: 'Cirujano Oral',
-      expertise: 'Cirugía de Implantes, Injerto Óseo',
-      bio: 'Especialista en cirugías orales complejas para pacientes con estructura ósea comprometida por radioterapia.',
+      name: 'Dra. María Rosario Soto Caminada',
+      role: 'Especialista en Rehabilitación Oral',
+      expertise: 'Prótesis buco maxilofacial',
+      bio: 'Magíster en Geriatría y Gerontología. Docente universitaria y miembro de la Sociedad Latinoamericana de Prótesis Buco Maxilo Facial. Responsable de la planificación y ejecución de rehabilitaciones maxilofaciales.',
       initials: 'MR',
     },
     {
-      name: 'Dra. Sara Martínez',
-      role: 'Periodoncista',
-      expertise: 'Salud de Encías, Manejo de Tejidos Blandos',
-      bio: 'Experta en manejar desafíos de salud periodontal únicos para sobrevivientes de cáncer y pacientes post-radiación.',
-      initials: 'SM',
+      name: 'Dra. María Angélica Sánez Romero',
+      role: 'Especialista en Rehabilitación Oral',
+      expertise: 'Rehabilitación funcional y estética oncológica',
+      bio: 'Magíster en Estomatología. Docente universitaria y miembro de la Sociedad Latinoamericana de Prótesis Buco Maxilo Facial. Especialista en rehabilitación del paciente oncológico.',
+      initials: 'MA',
     },
     {
-      name: 'María Fernanda López',
-      role: 'Higienista Principal',
-      expertise: 'Cuidado Dental Oncológico, Manejo de Xerostomía',
-      bio: 'Higienista dental oncológica certificada dedicada al cuidado preventivo suave y minucioso.',
-      initials: 'ML',
+      name: 'Dra. Úrsula Tineo Valencia',
+      role: 'Especialista en Rehabilitación Oral',
+      expertise: 'Seguimiento clínico y láser odontológico',
+      bio: 'Magíster en Docencia e Investigación. Docente universitaria. Encargada del seguimiento clínico, controles, educación del paciente y aplicación de láser según requerimiento.',
+      initials: 'UT',
     },
   ];
 
   trackByName = (_: number, m: TeamMember) => m.name;
-
 }

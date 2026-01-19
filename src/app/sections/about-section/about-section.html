@@ -11,7 +11,6 @@
 
   <div class="container relative z-10 mx-auto px-4 sm:px-6">
     <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-
       <!-- IMAGE + STATS -->
       <div class="relative max-w-xl mx-auto lg:mx-0">
         <!-- Image -->
@@ -25,7 +24,9 @@
           </div>
 
           <!-- Soft overlay (mantiene tu estilo) -->
-          <div class="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent"></div>
+          <div
+            class="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent"
+          ></div>
         </div>
 
         <!-- Stats Card (pegada al borde derecho como referencia) -->
@@ -75,28 +76,25 @@
           class="font-heading text-3xl sm:text-4xl md:text-5xl
                  font-semibold text-secondary-foreground mb-5 max-w-xl"
         >
-          Una Práctica Construida sobre la Comprensión
+          Acompañamiento Integral para el Paciente Oncológico
         </h2>
 
-        <!-- Textos con ancho controlado para que no se estiren feo -->
-        <p class="text-secondary-foreground/80 text-lg leading-relaxed mb-5 max-w-xl">
-          Renova Dental fue fundada con una misión singular: proporcionar rehabilitación dental
-          excepcional para sobrevivientes de cáncer. Sabemos que el camino del tratamiento se extiende
-          mucho más allá de la remisión.
-        </p>
-
-
-        <!-- Mission -->
+        <!-- Mission / Vision -->
         <div
           class="p-6 rounded-xl border border-secondary-foreground/20
                  bg-secondary-foreground/10 max-w-xl"
         >
           <p class="text-secondary-foreground italic font-heading text-lg leading-relaxed">
-            "Nuestra misión es restaurar no solo sonrisas, sino confianza, comodidad y calidad de vida
-            para cada sobreviviente de cáncer que atendemos."
+            "Brindar atención odontológica especializada, humana y de alta complejidad al paciente
+            oncológico, acompañándolo en cada etapa de su tratamiento y devolviéndole funciones
+            vitales, dignidad y bienestar."
           </p>
-          <p class="text-secondary-foreground/60 mt-3 text-sm">
-            — El Equipo de Renova Dental
+
+          <p class="text-secondary-foreground/80 mt-4 text-sm leading-relaxed">
+            <span class="font-semibold">Visión:</span>
+            Ser el centro de referencia nacional en rehabilitación buco maxilofacial oncológica,
+            reconocido por su excelencia clínica, calidad humana y compromiso con la recuperación
+            integral del paciente.
           </p>
         </div>
 
@@ -111,7 +109,6 @@
                 class="w-11 h-11 rounded-lg bg-primary/20
                        flex items-center justify-center mb-3"
               >
-                <!-- TU SWITCH ORIGINAL VA AQUÍ (SIN CAMBIOS) -->
                 @switch (value.icon) {
                   @case ('heart') {
                     <svg
@@ -140,7 +137,9 @@
                       stroke-linejoin="round"
                       aria-hidden="true"
                     >
-                      <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z"></path>
+                      <path
+                        d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z"
+                      ></path>
                     </svg>
                   }
                   @case ('users') {
@@ -154,10 +153,14 @@
                       stroke-linejoin="round"
                       aria-hidden="true"
                     >
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <path
+                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                      ></path>
                       <circle cx="9" cy="7" r="4"></circle>
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      <path
+                        d="M16 3.13a4 4 0 0 1 0 7.75"
+                      ></path>
                     </svg>
                   }
                   @case ('award') {
@@ -172,7 +175,9 @@
                       aria-hidden="true"
                     >
                       <circle cx="12" cy="8" r="6"></circle>
-                      <path d="M15.5 14.5 18 22l-6-3-6 3 2.5-7.5"></path>
+                      <path
+                        d="M15.5 14.5 18 22l-6-3-6 3 2.5-7.5"
+                      ></path>
                     </svg>
                   }
                 }

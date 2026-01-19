@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import {NgStyle} from '@angular/common';
 
 type Faq = {
   question: string;
@@ -8,43 +9,42 @@ type Faq = {
 @Component({
   selector: 'app-faq-section',
   standalone: true,
-  imports: [],
+  imports: [
+    NgStyle
+  ],
   templateUrl: './faq-section.html',
 })
 export class FaqSection {
   faqs: Faq[] = [
     {
-      question:
-        '¿Cuánto tiempo después del tratamiento del cáncer puedo comenzar la rehabilitación dental?',
+      question: '¿Cuál es el costo del tratamiento?',
       answer:
-        'El tiempo varía según tu tratamiento específico y recuperación. Generalmente, recomendamos esperar al menos 6 meses después de la radioterapia antes de procedimientos de implantes. Sin embargo, los tratamientos no quirúrgicos pueden comenzar antes. Nos coordinaremos con tu oncólogo para determinar el cronograma óptimo para tu situación.',
+        'El tratamiento se diseña de forma personalizada. El costo depende del tipo de cirugía previa y del plan de rehabilitación indicado. Antes de iniciar, entregamos siempre un presupuesto claro y detallado.',
     },
     {
-      question: '¿Es seguro el trabajo dental para sobrevivientes de cáncer?',
+      question: '¿Cuánto tiempo dura el proceso de rehabilitación?',
       answer:
-        'Sí, cuando lo realizan especialistas capacitados en cuidado dental oncológico. Nuestro equipo utiliza protocolos modificados específicamente diseñados para pacientes post-cáncer, incluyendo evaluación cuidadosa de densidad ósea, coordinación con tu equipo médico y protocolos de cicatrización especializados. Tu seguridad es nuestra máxima prioridad.',
+        'La rehabilitación completa suele extenderse entre 8 meses y un año. La duración varía según la cicatrización, los controles necesarios y las características clínicas de cada paciente.',
     },
     {
-      question:
-        '¿Funcionarán mis implantes dentales si he recibido radioterapia?',
+      question: '¿Podré recuperar mi función y apariencia?',
       answer:
-        'Muchos pacientes que han recibido radioterapia son excelentes candidatos para implantes. Aunque la radiación puede afectar la cicatrización ósea, nuestras técnicas especializadas—incluyendo protocolos de oxígeno hiperbárico cuando es necesario—han ayudado a miles de pacientes a recibir implantes exitosamente. Realizaremos evaluaciones exhaustivas para crear un plan personalizado.',
+        'Nuestro objetivo es restablecer la función oral —habla, masticación y deglución— junto con la estética facial, alcanzando el mejor resultado posible según cada caso.',
     },
     {
-      question:
-        '¿Cómo manejan los problemas de boca seca por el tratamiento del cáncer?',
+      question: '¿Por qué presento sequedad bucal?',
       answer:
-        'La xerostomía (boca seca) es común después de la radiación y ciertos medicamentos. Ofrecemos manejo integral incluyendo tratamientos de flúor de alta concentración, sustitutos de saliva, bandejas personalizadas para retención de humedad y monitoreo continuo para prevenir complicaciones. Nuestro objetivo es mantenerte cómodo y proteger tu salud oral.',
+        'La sequedad bucal es una consecuencia frecuente de la radioterapia. Evaluamos cada situación y brindamos indicaciones y cuidados específicos para mejorar el confort y proteger la salud oral.',
     },
     {
-      question: '¿Se coordinan con mi equipo de oncología?',
+      question: '¿Por qué los líquidos pasan hacia la nariz?',
       answer:
-        'Absolutamente. El cuidado colaborativo es fundamental en nuestro enfoque. Mantenemos comunicación cercana con tus oncólogos, radioterapeutas y otros proveedores de salud para asegurar que todos los tratamientos sean seguros y oportunos. Solicitaremos los registros necesarios y proporcionaremos actualizaciones detalladas a tu equipo.',
+        'Esto ocurre cuando existe una comunicación entre la cavidad oral y nasal. El uso de un obturador permite sellar esta comunicación y recuperar la función de forma segura.',
     },
     {
-      question: '¿Cuáles son las opciones de pago disponibles?',
+      question: '¿Por qué el obturador es necesario para hablar correctamente?',
       answer:
-        'Creemos que las preocupaciones financieras no deben impedir que nadie reciba la atención necesaria. Aceptamos la mayoría de los principales planes de seguro, ofrecemos planes de pago flexibles y podemos ayudar a navegar la cobertura para beneficios médicos vs. dentales. Nuestro equipo trabajará contigo para encontrar una solución accesible.',
+        'El obturador restablece la separación entre boca y cavidad nasal, permitiendo una correcta emisión de la voz. Sin él, la pronunciación y el control del aire se ven afectados.',
     },
   ];
 

@@ -17,28 +17,72 @@
 
     <!-- Testimonials Layout with Image -->
     <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-      <!-- Feature Image -->
+      <!-- Feature Image (Carousel) -->
       <div
-        class="relative rounded-2xl overflow-hidden shadow-xl order-2 lg:order-1"
+        class="relative rounded-2xl overflow-hidden shadow-xl order-2 lg:order-1 group"
+        (mouseenter)="pauseAutoPlay()"
+        (mouseleave)="resumeAutoPlay()"
       >
-        <img
-          [src]="patientImage"
-          alt="Paciente feliz con su nueva sonrisa"
-          class="w-full h-80 md:h-[500px] object-cover object-center"
-        />
+        <!-- Slides -->
+        <div class="relative w-full h-80 md:h-[500px]">
+          @for (slide of heroSlides; track $index) {
+            <img
+              [src]="slide.src"
+              [alt]="slide.alt"
+              class="absolute inset-0 w-full h-80 md:h-[500px] object-cover object-center transition-opacity duration-500"
+              [class.opacity-100]="$index === currentSlide"
+              [class.opacity-0]="$index !== currentSlide"
+            />
+          }
+        </div>
+
         <div
           class="absolute inset-0 bg-gradient-to-t from-secondary/60 via-transparent to-transparent"
         ></div>
+
         <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8">
           <div
             class="inline-flex items-center gap-2 px-4 py-2 bg-white/95 backdrop-blur-sm rounded-full shadow-lg"
           >
             <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            <span class="text-foreground font-medium text-sm"
-            >+2,000 Sonrisas Restauradas</span
-            >
+            <span class="text-foreground font-medium text-sm">
+              {{ heroSlides[currentSlide].badgeText }}
+            </span>
+          </div>
+
+          <!-- Dots -->
+          <div class="mt-4 flex items-center gap-2">
+            @for (slide of heroSlides; track $index) {
+              <button
+                type="button"
+                class="w-2.5 h-2.5 rounded-full bg-white/70 transition-all"
+                [class.w-6]="$index === currentSlide"
+                [class.bg-white]="$index === currentSlide"
+                (click)="goToSlide($index)"
+                aria-label="Ir a imagen"
+              ></button>
+            }
           </div>
         </div>
+
+        <!-- Prev/Next (invisibles hasta hover, sin cambiar colores existentes) -->
+        <button
+          type="button"
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          (click)="prevSlide()"
+          aria-label="Anterior"
+        >
+          ‹
+        </button>
+
+        <button
+          type="button"
+          class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          (click)="nextSlide()"
+          aria-label="Siguiente"
+        >
+          ›
+        </button>
       </div>
 
       <!-- Testimonials Grid -->

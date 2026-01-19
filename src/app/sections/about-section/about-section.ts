@@ -18,27 +18,27 @@ export class AboutSection {
   values: ValueItem[] = [
     {
       icon: 'heart',
-      title: 'Compasión Primero',
+      title: 'Acompañamiento Humano',
       description:
-        'Entendemos el viaje emocional de los sobrevivientes de cáncer. Cada interacción está guiada por empatía y cuidado genuino.',
+        'Te acompañamos desde el primer diagnóstico hasta la rehabilitación definitiva, con un trato empático y respetuoso en cada etapa.',
     },
     {
       icon: 'shield',
-      title: 'Experiencia Especializada',
+      title: 'Alta Complejidad Clínica',
       description:
-        'Nuestro equipo tiene formación dedicada en cuidado dental oncológico, asegurando protocolos de tratamiento seguros y efectivos.',
+        'Atención odontológica especializada para el paciente oncológico, con protocolos seguros y enfoque buco maxilofacial.',
     },
     {
       icon: 'users',
-      title: 'Cuidado Colaborativo',
+      title: 'Trabajo Interdisciplinario',
       description:
-        'Trabajamos en estrecha colaboración con oncólogos y proveedores de salud para brindar rehabilitación coordinada e integral.',
+        'Coordinamos con tu equipo médico para una recuperación integral, alineando el plan odontológico con tu tratamiento.',
     },
     {
       icon: 'award',
-      title: 'Excelencia en Atención',
+      title: 'Excelencia y Referencia',
       description:
-        'Tecnología de vanguardia combinada con atención personalizada para el más alto estándar de rehabilitación dental.',
+        'Buscamos ser un centro referente por calidad humana, excelencia clínica y resultados que devuelven dignidad y bienestar.',
     },
   ];
 

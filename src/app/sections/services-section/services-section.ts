@@ -14,39 +14,39 @@ export class ServicesSection {
   services: Service[] = [
     {
       icon: 'stethoscope',
-      title: 'Evaluación Oral Integral',
+      title: 'Evaluación Integral Oncológica',
       description:
-        'Diagnóstico completo de salud dental post-tratamiento oncológico, identificando necesidades específicas de rehabilitación.',
+        'Valoración completa de la cavidad oral en pacientes oncológicos (especialmente cabeza y cuello) para planificar atención antes, durante y después del tratamiento.',
     },
     {
       icon: 'shieldCheck',
-      title: 'Rehabilitación con Implantes',
+      title: 'Rehabilitación Buco Maxilofacial',
       description:
-        'Implantes dentales avanzados para pacientes que han recibido radioterapia, con protocolos especializados para una óptima cicatrización.',
+        'Rehabilitación especializada postoperatoria para recuperar función oral, habla, deglución y estética, con protocolos según cada caso.',
     },
     {
       icon: 'smile',
-      title: 'Odontología Restauradora',
+      title: 'Prótesis Fija y Removible',
       description:
-        'Coronas, puentes y prótesis personalizadas para restaurar la función y estética natural después del tratamiento del cáncer.',
+        'Prótesis personalizadas y obturadores (cuando corresponde) para restituir función y estética de forma segura y progresiva.',
     },
     {
       icon: 'pill',
-      title: 'Manejo de Xerostomía',
+      title: 'Endodoncia y Control de Infecciones',
       description:
-        'Cuidado especializado para condiciones de boca seca comunes después de la radiación, incluyendo tratamientos preventivos.',
+        'Tratamientos conservadores y endodónticos para eliminar focos infecciosos y preparar la boca, reduciendo riesgos durante el tratamiento oncológico.',
     },
     {
       icon: 'sparkles',
-      title: 'Rehabilitación Estética',
+      title: 'Periodoncia y Láser Odontológico',
       description:
-        'Soluciones cosméticas para restaurar tu sonrisa con confianza, incluyendo carillas y reconstrucción completa de boca.',
+        'Manejo de encías y tejidos con técnicas y láser odontológico para favorecer salud oral, confort y cicatrización, según indicación clínica.',
     },
     {
       icon: 'heartHandshake',
-      title: 'Programas de Apoyo',
+      title: 'Controles y Mantenimiento Interdisciplinario',
       description:
-        'Soporte continuo incluyendo orientación nutricional, educación en higiene oral y coordinación con tu equipo oncológico.',
+        'Seguimiento periódico, ajustes y mantenimiento, coordinado con el equipo tratante. Atención personalizada e interdisciplinaria en todo el proceso.',
     },
   ];
 

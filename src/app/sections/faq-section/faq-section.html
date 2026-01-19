@@ -125,9 +125,12 @@
               <!-- Content -->
               <div
                 class="grid transition-[grid-template-rows] duration-200 ease-out"
-                [style.gridTemplateRows]="openIndex === i ? '1fr' : '0fr'"
+                [ngStyle]="{
+                'grid-template-rows': openIndex === i ? '1fr' : '0fr'
+                }"
               >
-                <div class="overflow-hidden">
+
+              <div class="overflow-hidden">
                   <div class="pb-6 text-muted-foreground leading-relaxed">
                     {{ faq.answer }}
                   </div>

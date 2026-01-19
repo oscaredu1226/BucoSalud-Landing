@@ -39,7 +39,6 @@
   <div class="bg-primary text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-        <!-- MessageCircle small -->
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
@@ -57,7 +56,6 @@
       class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
       aria-label="Cerrar chat"
     >
-      <!-- X small -->
       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M18 6 6 18"></path>
@@ -81,26 +79,26 @@
           [class.rounded-tr-sm]="!message.isBot"
         >
           @if (message.kind === 'contact') {
-            <!-- Texto + link (WhatsApp) -->
             <div class="whitespace-pre-line">
               Puedes contactarnos a través de:
 
               <br /><br />
               📱 WhatsApp:
               <a
-                href="https://wa.me/19999999999"
+                href="https://wa.me/[TU_WHATSAPP_SOLO_NUMEROS]"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="text-primary underline hover:text-[hsl(var(--primary-hover))]"
               >
-                +1 999 999 9999
+                [TU WHATSAPP]
               </a>
               <br />
-              📞 Teléfono: (555) 555-5555
+              📞 Teléfono: [TU TELÉFONO]
               <br />
-              ✉️ Email: contacto@tudominio.com
+              ✉️ Email: [TU EMAIL]
               <br /><br />
-              El tiempo de respuesta típico es entre 5 y 30 minutos durante el horario de atención.
+              Respondemos dentro del horario de atención. Si escribes fuera de horario,
+              te contactaremos en el siguiente turno.
             </div>
           } @else {
             {{ message.text }}
@@ -113,7 +111,9 @@
 
   <!-- Options Area -->
   <div class="p-3 border-t border-gray-100 bg-white rounded-b-2xl">
-    <p class="text-xs text-muted-foreground mb-2 px-1">Selecciona una opción:</p>
+    <p class="text-xs text-muted-foreground mb-2 px-1">
+      Selecciona una opción:
+    </p>
     <div class="flex flex-wrap gap-2">
       @for (option of predefinedOptions; track option.id) {
         <button

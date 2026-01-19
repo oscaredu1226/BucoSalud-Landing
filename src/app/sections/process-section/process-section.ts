@@ -15,37 +15,38 @@ export class ProcessSection {
   steps: Step[] = [
     {
       number: '01',
-      icon: 'message',
-      title: 'Consulta Inicial',
+      icon: 'clipboard',
+      title: 'Evaluación y Preparación Prequirúrgica',
       description:
-        'Comenzamos con una conversación empática para entender tu historia, preocupaciones y objetivos. Sin presión, solo escuchando.',
-      highlight: 'Consulta gratuita disponible',
+        'Realizamos una evaluación integral de la cavidad oral y preparamos la boca para reducir riesgos durante el tratamiento oncológico: restauraciones, endodoncias, extracciones necesarias, prótesis, limpieza y desinfección bucal.',
+      highlight: 'Prevención de infecciones y complicaciones',
     },
     {
       number: '02',
-      icon: 'clipboard',
-      title: 'Evaluación Integral',
+      icon: 'message',
+      title: 'Coordinación con el Equipo Quirúrgico',
       description:
-        'Una evaluación exhaustiva de salud oral con imágenes avanzadas, coordinando con tu equipo oncológico cuando sea necesario.',
-      highlight: 'Enfoque de cuidado coordinado',
+        'Tomamos modelos y coordinamos con el cirujano de cabeza y cuello para planificar el obturador quirúrgico y definir el protocolo de rehabilitación postoperatoria.',
+      highlight: 'Cuidado coordinado y planificado',
     },
     {
       number: '03',
       icon: 'calendar',
-      title: 'Plan de Tratamiento Personalizado',
+      title: 'Obturador Inmediato Postcirugía',
       description:
-        'Juntos, creamos un plan de rehabilitación personalizado que respeta tu ritmo, presupuesto y consideraciones de salud.',
-      highlight: 'Opciones de pago flexibles',
+        'Tras la intervención, instalamos el obturador quirúrgico para favorecer la cicatrización y ayudar desde el primer día a hablar y alimentarse con mayor seguridad.',
+      highlight: 'Soporte funcional desde el primer día',
     },
     {
       number: '04',
       icon: 'sparkles',
-      title: 'Rehabilitación Cuidadosa',
+      title: 'Rehabilitación Provisional y Definitiva',
       description:
-        'Tu tratamiento se realiza con el máximo cuidado, utilizando técnicas optimizadas para pacientes post-oncológicos.',
-      highlight: 'Protocolos especializados',
+        'Acompañamos la cicatrización con un obturador provisional durante 8 a 10 meses, con controles y ajustes. Luego realizamos la rehabilitación definitiva para devolver función oral, estética, habla y calidad de vida.',
+      highlight: 'Controles, ajustes y acompañamiento continuo',
     },
   ];
+
 
   scrollToSection(id: string) {
     const el = document.querySelector(id);
