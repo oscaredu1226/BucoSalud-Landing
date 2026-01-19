@@ -2,17 +2,20 @@
   <div class="container mx-auto px-4 sm:px-6">
     <!-- Section Header -->
     <div class="text-center max-w-2xl mx-auto mb-16">
-      <span class="text-primary font-medium text-sm uppercase tracking-wider"
-      >Nuestro Proceso</span
-      >
+      <span class="text-primary font-medium text-sm uppercase tracking-wider">
+        Proceso de tratamiento
+      </span>
+
       <h2
         class="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground mt-3 mb-5"
       >
-        Tu Camino hacia la Restauración
+        Acompañamiento antes, durante y después de la cirugía
       </h2>
+
       <p class="text-muted-foreground text-lg leading-relaxed">
-        Un enfoque paso a paso, diseñado para que te sientas seguro y acompañado
-        durante todo tu proceso de rehabilitación.
+        Preparamos la cavidad oral antes de la intervención, acompañamos durante el tratamiento y
+        realizamos la rehabilitación provisional y definitiva para recuperar funciones vitales como
+        la deglución, el habla y la masticación.
       </p>
     </div>
 
@@ -24,20 +27,19 @@
             <div
               class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"
             >
-              <span
-                class="text-primary font-heading font-semibold text-sm"
-              >{{ step.number }}</span
-              >
+              <span class="text-primary font-heading font-semibold text-sm">
+                {{ step.number }}
+              </span>
             </div>
-            <span
-              class="text-sm font-medium text-muted-foreground hidden xl:inline"
-            >{{ firstWord(step.title) }}</span
-            >
+            <span class="text-sm font-medium text-muted-foreground hidden xl:inline">
+              {{ firstWord(step.title) }}
+            </span>
           </div>
 
           @if (i < steps.length - 1) {
             <div
               class="w-16 xl:w-24 h-px bg-gradient-to-r from-primary/30 to-primary/10 mx-4"
+              aria-hidden="true"
             ></div>
           }
         </div>
@@ -55,16 +57,14 @@
         aria-hidden="true"
       >
         <path d="M9 12l2 2 4-4"></path>
-        <path
-          d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"
-        ></path>
+        <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
       </svg>
     </div>
 
     <!-- Process Steps (Zigzag Timeline) -->
     <div class="max-w-6xl mx-auto">
       <div class="relative">
-        <!-- Línea central (solo en md+) -->
+        <!-- Center line (md+) -->
         <div
           class="hidden md:block absolute left-1/2 top-0 -translate-x-1/2 w-0.5 h-full
              bg-gradient-to-b from-primary/30 to-primary/10"
@@ -75,7 +75,7 @@
           @for (step of steps; track step.number; let i = $index) {
             <div class="relative grid md:grid-cols-2 gap-8 md:gap-14 items-center mb-14">
 
-              <!-- TEXTO -->
+              <!-- TEXT -->
               <div
                 [class.md:order-1]="i % 2 === 0"
                 [class.md:order-2]="i % 2 !== 0"
@@ -86,16 +86,12 @@
                hover:shadow-lg transition-all duration-200"
                 >
                   <div class="flex items-start justify-between gap-4 mb-3">
-                    <h3
-                      class="font-heading text-xl md:text-2xl font-semibold text-foreground"
-                    >
+                    <h3 class="font-heading text-xl md:text-2xl font-semibold text-foreground">
                       {{ step.title }}
                     </h3>
-                    <span
-                      class="text-4xl md:text-5xl font-heading font-bold text-primary/10"
-                    >
-            {{ step.number }}
-          </span>
+                    <span class="text-4xl md:text-5xl font-heading font-bold text-primary/10">
+                      {{ step.number }}
+                    </span>
                   </div>
 
                   <p class="text-muted-foreground leading-relaxed mb-4">
@@ -107,13 +103,13 @@
                   >
                     <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
                     <span class="text-sm font-medium text-foreground/70">
-            {{ step.highlight }}
-          </span>
+                      {{ step.highlight }}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <!-- IMAGEN -->
+              <!-- IMAGE -->
               <div
                 [class.md:order-2]="i % 2 === 0"
                 [class.md:order-1]="i % 2 !== 0"
@@ -122,15 +118,16 @@
                 <div class="relative rounded-2xl overflow-hidden shadow-lg group">
                   <img
                     src="/assets/step-{{ step.number }}.jpg"
-                    alt="{{ step.title }}"
+                    alt="Etapa {{ step.number }} del proceso: {{ step.title }}"
                     class="w-full h-64 md:h-80 object-cover object-center
                  transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
                   />
 
-                  <!-- Overlay sutil (mantiene tu identidad visual) -->
+                  <!-- Subtle overlay -->
                   <div
-                    class="absolute inset-0 bg-gradient-to-t
-                 from-secondary/30 via-transparent to-transparent"
+                    class="absolute inset-0 bg-gradient-to-t from-secondary/30 via-transparent to-transparent"
+                    aria-hidden="true"
                   ></div>
                 </div>
               </div>
@@ -141,16 +138,14 @@
       </div>
     </div>
 
-
     <!-- CTA -->
     <div class="text-center mt-12">
       <button
         type="button"
-        (click)="scrollToSection('#cita')"
+        (click)="scrollToSection('contacto')"
         class="inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all"
       >
-        Comienza tu Proceso Hoy
-        <!-- ArrowRight icon -->
+        Solicitar evaluación
         <svg
           class="w-4 h-4"
           viewBox="0 0 24 24"

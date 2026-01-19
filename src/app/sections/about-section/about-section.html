@@ -1,11 +1,10 @@
 <section id="nosotros" class="py-20 md:py-28 bg-secondary relative overflow-hidden">
-  <!-- Background Image Overlay -->
-  <div class="absolute inset-0 opacity-10">
+  <!-- Background Image Overlay (decorative) -->
+  <div class="absolute inset-0 opacity-10" aria-hidden="true">
     <img
       [src]="clinicImage"
       alt=""
       class="w-full h-full object-cover"
-      aria-hidden="true"
     />
   </div>
 
@@ -18,18 +17,20 @@
           <div class="aspect-[4/3]">
             <img
               [src]="clinicImage"
-              alt="Rehabilitación BucoMaxilofacial Perú"
+              alt="Equipo clínico en consulta de rehabilitación buco maxilofacial oncológica"
               class="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
 
-          <!-- Soft overlay (mantiene tu estilo) -->
+          <!-- Soft overlay -->
           <div
             class="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent"
+            aria-hidden="true"
           ></div>
         </div>
 
-        <!-- Stats Card (pegada al borde derecho como referencia) -->
+        <!-- Stats Card -->
         <div
           class="absolute -bottom-10 right-6 lg:-right-10
                  bg-background rounded-xl shadow-lg border border-border
@@ -55,13 +56,13 @@
           </div>
         </div>
 
-        <!-- espacio extra para que el card no choque con la siguiente sección -->
+        <!-- spacing so the card doesn't overlap next section -->
         <div class="h-10"></div>
       </div>
 
       <!-- CONTENT -->
       <div class="pt-10 lg:pt-0">
-        <!-- Badge bien visible -->
+        <!-- Badge -->
         <span
           class="inline-flex items-center mb-5 px-4 py-1.5 rounded-full
                  border border-secondary-foreground/25
@@ -69,14 +70,14 @@
                  text-secondary-foreground/80
                  text-xs font-semibold uppercase tracking-wider"
         >
-          Sobre Nosotros
+          Sobre nosotros
         </span>
 
         <h2
           class="font-heading text-3xl sm:text-4xl md:text-5xl
                  font-semibold text-secondary-foreground mb-5 max-w-xl"
         >
-          Acompañamiento Integral para el Paciente Oncológico
+          Atención especializada en rehabilitación buco maxilofacial oncológica
         </h2>
 
         <!-- Mission / Vision -->
@@ -85,9 +86,9 @@
                  bg-secondary-foreground/10 max-w-xl"
         >
           <p class="text-secondary-foreground italic font-heading text-lg leading-relaxed">
-            "Brindar atención odontológica especializada, humana y de alta complejidad al paciente
+            Brindar atención odontológica especializada, humana y de alta complejidad al paciente
             oncológico, acompañándolo en cada etapa de su tratamiento y devolviéndole funciones
-            vitales, dignidad y bienestar."
+            vitales, dignidad y bienestar.
           </p>
 
           <p class="text-secondary-foreground/80 mt-4 text-sm leading-relaxed">
@@ -98,7 +99,7 @@
           </p>
         </div>
 
-        <!-- Values (cards sólidas para que se vean los íconos y el texto) -->
+        <!-- Values -->
         <div class="grid sm:grid-cols-2 gap-4 mt-10 max-w-2xl">
           @for (value of values; track value.title) {
             <div
@@ -158,9 +159,7 @@
                       ></path>
                       <circle cx="9" cy="7" r="4"></circle>
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                      <path
-                        d="M16 3.13a4 4 0 0 1 0 7.75"
-                      ></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                   }
                   @case ('award') {
@@ -175,9 +174,7 @@
                       aria-hidden="true"
                     >
                       <circle cx="12" cy="8" r="6"></circle>
-                      <path
-                        d="M15.5 14.5 18 22l-6-3-6 3 2.5-7.5"
-                      ></path>
+                      <path d="M15.5 14.5 18 22l-6-3-6 3 2.5-7.5"></path>
                     </svg>
                   }
                 }
