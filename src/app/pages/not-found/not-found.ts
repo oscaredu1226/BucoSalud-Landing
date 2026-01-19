@@ -8,6 +8,8 @@ import {Meta, Title} from '@angular/platform-browser';
     RouterLink
   ],
   templateUrl: './not-found.html',
+  standalone: true,
+
 })
 export class NotFoundComponent implements OnInit {
   constructor(private title: Title, private meta: Meta) {

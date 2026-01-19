@@ -31,7 +31,7 @@ import { setCanonical, setOpenGraph } from '../../seo/seo.utils';
     ProcessSection,
     HeroSection
   ],
-  templateUrl: '/home.html',
+  templateUrl: './home.html',
 })
 export class HomeComponent {
   constructor(private title: Title, private meta: Meta) {

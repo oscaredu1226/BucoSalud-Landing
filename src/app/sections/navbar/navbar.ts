@@ -6,6 +6,8 @@ type NavLink = { href: string; label: string };
   selector: 'app-navbar',
   imports: [],
   templateUrl: './navbar.html',
+  standalone: true,
+
 })
 export class Navbar {
   isOpen = false;

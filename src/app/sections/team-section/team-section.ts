@@ -12,6 +12,8 @@ type TeamMember = {
   selector: 'app-team-section',
   imports: [],
   templateUrl: './team-section.html',
+  standalone: true,
+
 })
 export class TeamSection {
   team: TeamMember[] = [

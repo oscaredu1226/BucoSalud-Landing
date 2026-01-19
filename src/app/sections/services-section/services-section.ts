@@ -9,6 +9,8 @@ type Service = {
   selector: 'app-services-section',
   imports: [],
   templateUrl: './services-section.html',
+  standalone: true,
+
 })
 export class ServicesSection {
   services: Service[] = [

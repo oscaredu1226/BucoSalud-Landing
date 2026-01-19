@@ -10,6 +10,8 @@ type Step = {
   selector: 'app-process-section',
   imports: [],
   templateUrl: './process-section.html',
+  standalone: true,
+
 })
 export class ProcessSection {
   steps: Step[] = [

@@ -6,7 +6,8 @@ import {ToastContainerComponent} from './shared/toast/toast-container.component'
   selector: 'app-root',
   imports: [RouterOutlet, ToastContainerComponent],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
+  standalone: true,
 })
 export class App {
   protected readonly title = signal('BucoSaludLanding');

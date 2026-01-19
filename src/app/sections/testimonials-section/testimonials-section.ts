@@ -17,6 +17,8 @@ type HeroSlide = {
   selector: 'app-testimonials-section',
   imports: [],
   templateUrl: './testimonials-section.html',
+  standalone: true,
+
 })
 export class TestimonialsSection implements OnInit, OnDestroy {
   constructor(private cdr: ChangeDetectorRef) {}

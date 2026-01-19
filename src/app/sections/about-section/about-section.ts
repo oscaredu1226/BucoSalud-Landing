@@ -11,6 +11,7 @@ type ValueItem = {
   selector: 'app-about-section',
   imports: [],
   templateUrl: './about-section.html',
+  standalone: true,
 })
 export class AboutSection {
   clinicImage = 'assets/clinic-interior.jpg';

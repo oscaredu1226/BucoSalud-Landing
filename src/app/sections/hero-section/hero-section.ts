@@ -7,6 +7,8 @@ import {NgOptimizedImage} from '@angular/common';
     NgOptimizedImage
   ],
   templateUrl: './hero-section.html',
+  standalone: true,
+
 })
 export class HeroSection {
   scrollToSection(id: string) {

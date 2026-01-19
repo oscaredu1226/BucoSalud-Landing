@@ -13,6 +13,8 @@ type Message = {
   selector: 'app-chat-widget',
   imports: [],
   templateUrl: './chat-widget.html',
+  standalone: true,
+
 })
 export class ChatWidget {
   isOpen = false;

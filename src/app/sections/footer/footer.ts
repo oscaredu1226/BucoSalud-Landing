@@ -7,6 +7,8 @@ import {RouterLink} from '@angular/router';
     RouterLink
   ],
   templateUrl: './footer.html',
+  standalone: true,
+
 })
 export class Footer {
   currentYear = new Date().getFullYear();
