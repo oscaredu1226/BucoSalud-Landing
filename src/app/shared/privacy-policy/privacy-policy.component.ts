@@ -21,9 +21,9 @@ export class PrivacyPolicyComponent {
     private title: Title,
     private meta: Meta
   ) {
-    const pageTitle = 'Política de Privacidad | Renova Dental';
+    const pageTitle = 'Política de Privacidad | Rehabilitación BucoMaxilofacial Perú';
     const pageDesc =
-      'Conoce cómo Renova Dental protege tus datos personales y cómo utilizamos la información enviada desde el sitio.';
+      'Conoce cómo se protegen tus datos personales y cómo utilizamos la información enviada desde el sitio.';
 
     this.title.setTitle(pageTitle);
     this.meta.updateTag({ name: 'description', content: pageDesc });

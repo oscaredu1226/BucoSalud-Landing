@@ -13,7 +13,7 @@ import {Meta, Title} from '@angular/platform-browser';
 })
 export class NotFoundComponent implements OnInit {
   constructor(private title: Title, private meta: Meta) {
-    this.title.setTitle('404 | Renova Dental');
+    this.title.setTitle('404 | Rehabilitación BucoMaxilofacial Perú');
     this.meta.updateTag({
       name: 'description',
       content: 'La página que buscas no existe. Regresa al inicio para continuar.',

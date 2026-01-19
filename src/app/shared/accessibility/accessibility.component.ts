@@ -15,11 +15,11 @@ import {Meta, Title} from '@angular/platform-browser';
 })
 export class AccessibilityComponent {
   constructor(private title: Title, private meta: Meta) {
-    this.title.setTitle('Accesibilidad | Renova Dental');
+    this.title.setTitle('Accesibilidad | Rehabilitación BucoMaxilofacial Perú');
     this.meta.updateTag({
       name: 'description',
       content:
-        'Declaración de accesibilidad de Renova Dental. Nuestro compromiso para brindar una experiencia web accesible para todos.',
+        'Declaración de accesibilidad de Rehabilitación BucoMaxilofacial Perú. Nuestro compromiso para brindar una experiencia web accesible para todos.',
     });
   }
   currentYear = new Date().getFullYear();

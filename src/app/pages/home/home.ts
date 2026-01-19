@@ -35,9 +35,9 @@ import { setCanonical, setOpenGraph } from '../../seo/seo.utils';
 })
 export class HomeComponent {
   constructor(private title: Title, private meta: Meta) {
-    const pageTitle = 'Rehabilitación Dental Oncológica | Renova Dental';
+    const pageTitle = 'Rehabilitación Buco Maxilofacial Oncológica en Perú';
     const pageDesc =
-      'Clínica especializada en rehabilitación bucomaxilofacial y dental para pacientes oncológicos. Atención humana, segura y personalizada.';
+      'Centro especializado en la atención odontológica integral del paciente oncológico de cabeza y cuello. Acompañamos desde el diagnóstico hasta la rehabilitación definitiva, devolviendo funciones vitales y calidad de vida.';
 
     this.title.setTitle(pageTitle);
     this.meta.updateTag({
@@ -53,3 +53,4 @@ export class HomeComponent {
     });
   }
 }
+

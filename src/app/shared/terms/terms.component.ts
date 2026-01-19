@@ -12,11 +12,11 @@ import {Meta, Title} from '@angular/platform-browser';
 })
 export class TermsComponent {
   constructor(private title: Title, private meta: Meta) {
-    this.title.setTitle('Términos de Servicio | Renova Dental');
+    this.title.setTitle('Términos de Servicio | Rehabilitación BucoMaxilofacial Perú');
     this.meta.updateTag({
       name: 'description',
       content:
-        'Revisa los términos y condiciones de uso del sitio web de Renova Dental, incluyendo servicios, citas y limitación de responsabilidad.',
+        'Revisa los términos y condiciones de uso del sitio web de Rehabilitación BucoMaxilofacial Perú, incluyendo servicios, citas y limitación de responsabilidad.',
     });
   }
   currentYear = new Date().getFullYear();
