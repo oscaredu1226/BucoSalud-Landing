@@ -1,0 +1,153 @@
+<section class="min-h-[calc(100vh-80px)] py-8 md:py-10">
+  <div class="container mx-auto px-4 sm:px-6">
+
+    <!-- HEADER -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h1 class="text-3xl font-semibold text-foreground">Agenda</h1>
+        <p class="text-muted-foreground">
+          Visualiza y gestiona las citas programadas
+        </p>
+      </div>
+
+      <!-- VIEW TOGGLE -->
+      <div class="flex rounded-xl bg-muted p-1">
+        <button
+          class="px-4 py-2 text-sm font-semibold rounded-lg"
+          [ngClass]="viewMode === 'day' ? 'bg-background shadow text-foreground' : 'text-muted-foreground'"
+          (click)="setView('day')"
+        >
+          Día
+        </button>
+        <button
+          class="px-4 py-2 text-sm font-semibold rounded-lg"
+          [ngClass]="viewMode === 'week' ? 'bg-background shadow text-foreground' : 'text-muted-foreground'"
+          (click)="setView('week')"
+        >
+          Semana
+        </button>
+      </div>
+    </div>
+
+    <!-- ======================
+         DAY VIEW
+         ====================== -->
+    @if (viewMode === 'day') {
+
+      <!-- DAYS STRIP -->
+      <div class="mt-6 flex gap-3 overflow-x-auto">
+        @for (d of days; track d.date) {
+          <button
+            (click)="selectDay(d.date)"
+            class="min-w-[90px] rounded-xl border px-3 py-2 text-center transition"
+            [ngClass]="
+              selectedDate === d.date
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background border-border hover:bg-muted'
+            "
+          >
+            <div class="text-xs font-semibold">{{ d.weekday }}</div>
+            <div class="text-lg font-bold">{{ d.day }}</div>
+          </button>
+        }
+      </div>
+
+      <!-- TIME GRID -->
+      <div class="mt-6 bg-card rounded-2xl border border-border overflow-hidden">
+        @for (slot of timeSlots; track slot) {
+          @let appt = getAppointmentBySlot(slot);
+
+          <div class="flex gap-4 px-5 py-4 border-b border-border">
+            <div class="w-16 text-sm font-semibold text-foreground">
+              {{ slot }}
+            </div>
+
+            @if (appt) {
+              <div
+                class="flex-1 rounded-xl border p-4"
+                [ngClass]="{
+                  'bg-emerald-50 border-emerald-200': appt.status === 'Confirmada',
+                  'bg-amber-50 border-amber-200': appt.status === 'Pendiente',
+                  'bg-rose-50 border-rose-200': appt.status === 'Cancelada',
+                  'bg-slate-50 border-slate-200': appt.status === 'Completada'
+                }"
+              >
+                <div class="flex justify-between items-start">
+                  <div>
+                    <p class="font-semibold text-foreground">
+                      {{ appt.patientName }}
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                      DNI {{ appt.dni }} · {{ appt.phone }}
+                    </p>
+                    <p class="mt-1 text-sm text-foreground">
+                      {{ appt.reason }}
+                    </p>
+                  </div>
+
+                  <span
+                    class="px-3 py-1 text-xs font-semibold rounded-full"
+                    [ngClass]="{
+                      'bg-emerald-100 text-emerald-700': appt.status === 'Confirmada',
+                      'bg-amber-100 text-amber-700': appt.status === 'Pendiente',
+                      'bg-rose-100 text-rose-700': appt.status === 'Cancelada',
+                      'bg-slate-100 text-slate-700': appt.status === 'Completada'
+                    }"
+                  >
+                    {{ appt.status }}
+                  </span>
+                </div>
+              </div>
+            } @else {
+              <div class="flex-1 text-sm text-muted-foreground">
+                Disponible
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ======================
+         WEEK VIEW
+         ====================== -->
+    @if (viewMode === 'week') {
+      <div class="mt-6 grid grid-cols-7 gap-4">
+        @for (d of days; track d.date) {
+          <div
+            class="rounded-2xl border p-4"
+            [ngClass]="selectedDate === d.date ? 'border-primary' : 'border-border'"
+          >
+            <div class="text-center mb-3">
+              <p class="text-xs text-muted-foreground">{{ d.weekday }}</p>
+              <p class="text-lg font-semibold">{{ d.day }}</p>
+            </div>
+
+            @if (!hasAppointmentsForDate(d.date)) {
+              <p class="text-xs text-muted-foreground text-center">
+                Sin citas
+              </p>
+            }
+
+            @for (a of appointments; track a.id) {
+              @if (a.date === d.date) {
+                <div
+                  class="mt-2 rounded-lg px-3 py-2 text-sm"
+                  [ngClass]="{
+                    'bg-emerald-100 text-emerald-700': a.status === 'Confirmada',
+                    'bg-amber-100 text-amber-700': a.status === 'Pendiente',
+                    'bg-rose-100 text-rose-700': a.status === 'Cancelada'
+                  }"
+                >
+                  <p class="font-semibold">{{ a.time }}</p>
+                  <p class="truncate">{{ a.patientName }}</p>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</section>

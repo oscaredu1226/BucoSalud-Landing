@@ -1,0 +1,485 @@
+<section class="min-h-[calc(100vh-80px)] py-8 md:py-10">
+  <div class="container mx-auto px-4 sm:px-6">
+
+    <!-- Header (como imagen) -->
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="font-heading text-3xl sm:text-4xl font-semibold text-foreground">
+          Pacientes
+        </h1>
+        <p class="mt-2 text-muted-foreground">
+          Gestiona la información de los pacientes
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="openCreateModal()"
+        class="inline-flex items-center gap-3 rounded-2xl px-6 py-4 text-sm font-semibold
+               bg-primary text-primary-foreground transition"
+      >
+        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+          <!-- user plus -->
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M20 8v6"></path>
+            <path d="M17 11h6"></path>
+          </svg>
+        </span>
+        Nuevo Paciente
+      </button>
+    </div>
+
+    <!-- Search (como imagen) -->
+    <div class="mt-7">
+      <div class="relative max-w-[560px]">
+        <svg
+          class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+
+        <input
+          type="text"
+          [(ngModel)]="query"
+          placeholder="Buscar por nombre o DNI..."
+          class="h-12 w-full rounded-2xl border border-border bg-background pl-12 pr-4
+                 text-foreground placeholder:text-muted-foreground
+                 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+        />
+      </div>
+    </div>
+
+    <!-- Table card (como imagen) -->
+    <div class="mt-7 bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+      <!-- header -->
+      <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-border text-muted-foreground font-semibold">
+        <div class="col-span-5">Paciente</div>
+        <div class="col-span-2">DNI</div>
+        <div class="col-span-3">Contacto</div>
+        <div class="col-span-1">Última Cita</div>
+        <div class="col-span-1 text-right"></div>
+      </div>
+
+      @if (filtered.length === 0) {
+        <div class="px-6 py-16 text-center text-muted-foreground">
+          No se encontraron pacientes.
+        </div>
+      } @else {
+        <div class="divide-y divide-border">
+          @for (p of filtered; track trackById($index, p)) {
+            <div class="grid grid-cols-12 gap-4 px-6 py-5 items-center">
+              <!-- Paciente -->
+              <div class="col-span-5">
+                <div class="font-medium text-foreground">{{ p.fullName }}</div>
+              </div>
+
+              <!-- DNI -->
+              <div class="col-span-2 text-foreground/80">
+                {{ p.dni }}
+              </div>
+
+              <!-- Contacto -->
+              <div class="col-span-3">
+                <div class="flex items-center gap-4 text-foreground/80">
+                  @if (p.phone) {
+                    <div class="flex items-center gap-2">
+                      <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.32 1.7.6 2.5a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.58-1.12a2 2 0 0 1 2.11-.45c.8.28 1.64.48 2.5.6A2 2 0 0 1 22 16.92z"></path>
+                      </svg>
+                      <span>{{ p.phone }}</span>
+                    </div>
+                  } @else {
+                    <span class="text-muted-foreground">Sin contacto</span>
+                  }
+
+                  @if (p.email) {
+                    <div class="flex items-center gap-2">
+                      <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16v16H4z"></path>
+                        <path d="m22 6-10 7L2 6"></path>
+                      </svg>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Última Cita -->
+              <div class="col-span-1 text-foreground/80">
+                <span [class.text-muted-foreground]="!p.lastVisit">
+                  {{ formatLastVisit(p.lastVisit) }}
+                </span>
+              </div>
+
+              <!-- Actions (kebab + dropdown) -->
+              <div class="col-span-1 flex justify-end relative" data-popover>
+                <button
+                  type="button"
+                  (click)="toggleRowMenu(p.id)"
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-muted transition"
+                  aria-label="Acciones"
+                >
+                  <svg class="h-6 w-6 text-foreground" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="1.8"></circle>
+                    <circle cx="12" cy="12" r="1.8"></circle>
+                    <circle cx="12" cy="19" r="1.8"></circle>
+                  </svg>
+                </button>
+
+                @if (openRowMenuId === p.id) {
+                  <div
+                    class="absolute right-0 top-11 w-52 rounded-2xl border border-border bg-card shadow-lg overflow-hidden z-50"
+                    data-popover
+                  >
+                    <button
+                      type="button"
+                      (click)="openDetailModal(p)"
+                      class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+                    >
+                      <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"></path>
+                      </svg>
+                      Ver detalles
+                    </button>
+
+                    <button
+                      type="button"
+                      (click)="openEditModal(p)"
+                      class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+                    >
+                      <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                      </svg>
+                      Editar
+                    </button>
+
+                    <div class="h-px bg-border"></div>
+
+                    <button
+                      type="button"
+                      (click)="deleteRow(p)"
+                      class="w-full px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-muted transition flex items-center gap-3"
+                    >
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18"></path>
+                        <path d="M8 6V4h8v2"></path>
+                        <path d="M19 6l-1 14H6L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                      </svg>
+                      Eliminar
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- =========================
+       MODAL: Nuevo Paciente
+       ========================= -->
+  @if (isCreateModalOpen) {
+    <div class="fixed inset-0 z-[60]" data-popover>
+      <div class="absolute inset-0 bg-black/20" (click)="closeCreateModal()"></div>
+
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
+            <div>
+              <h2 class="text-xl font-semibold text-foreground">Nuevo Paciente</h2>
+              <p class="mt-1 text-muted-foreground">Registra un nuevo paciente.</p>
+            </div>
+
+            <button
+              type="button"
+              (click)="closeCreateModal()"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              aria-label="Cerrar"
+            >
+              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"></path>
+                <path d="M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="px-7 py-6">
+            <div class="grid gap-5">
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Nombre completo</label>
+                <input
+                  [(ngModel)]="formFullName"
+                  placeholder="Ej: María López García"
+                  class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                         text-foreground placeholder:text-muted-foreground
+                         focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label class="block text-sm font-semibold text-foreground mb-2">DNI</label>
+                  <input
+                    [(ngModel)]="formDni"
+                    placeholder="Ej: 12345678"
+                    class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                           text-foreground placeholder:text-muted-foreground
+                           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-foreground mb-2">Teléfono (opcional)</label>
+                  <input
+                    [(ngModel)]="formPhone"
+                    placeholder="Ej: 987654321"
+                    class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                           text-foreground placeholder:text-muted-foreground
+                           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Email (opcional)</label>
+                <input
+                  [(ngModel)]="formEmail"
+                  placeholder="Ej: maria@email.com"
+                  class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                         text-foreground placeholder:text-muted-foreground
+                         focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="closeCreateModal()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              (click)="createPatient()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground"
+            >
+              Crear Paciente
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- =========================
+       MODAL: Ver Detalles
+       ========================= -->
+  @if (isDetailModalOpen) {
+    <div class="fixed inset-0 z-[60]" data-popover>
+      <div class="absolute inset-0 bg-black/20" (click)="closeDetailModal()"></div>
+
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
+            <div>
+              <h2 class="text-xl font-semibold text-foreground">Detalles del paciente</h2>
+              <p class="mt-1 text-muted-foreground">Información del registro.</p>
+
+              <p class="mt-2 text-xs text-muted-foreground">
+                ID: <span class="font-semibold text-foreground">{{ selected?.id || '—' }}</span>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              (click)="closeDetailModal()"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              aria-label="Cerrar"
+            >
+              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"></path>
+                <path d="M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="px-7 py-6">
+            <div class="grid gap-5">
+              <div class="rounded-2xl border border-border bg-background p-4">
+                <div class="text-xs text-muted-foreground">Paciente</div>
+                <div class="mt-1 font-semibold text-foreground">{{ selected?.fullName || '—' }}</div>
+              </div>
+
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <div class="text-xs text-muted-foreground">DNI</div>
+                  <div class="mt-1 font-semibold text-foreground">{{ selected?.dni || '—' }}</div>
+                </div>
+
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <div class="text-xs text-muted-foreground">Última cita</div>
+                  <div class="mt-1 font-semibold text-foreground">{{ formatLastVisit(selected?.lastVisit) }}</div>
+                </div>
+              </div>
+
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <div class="text-xs text-muted-foreground">Teléfono</div>
+                  <div class="mt-1 font-semibold text-foreground">{{ selected?.phone || '—' }}</div>
+                </div>
+
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <div class="text-xs text-muted-foreground">Email</div>
+                  <div class="mt-1 font-semibold text-foreground">{{ selected?.email || '—' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="closeDetailModal()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+            >
+              Cerrar
+            </button>
+
+            <button
+              type="button"
+              (click)="selected && openEditModal(selected)"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground"
+            >
+              Editar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- =========================
+       MODAL: Editar Paciente
+       ========================= -->
+  @if (isEditModalOpen) {
+    <div class="fixed inset-0 z-[60]" data-popover>
+      <div class="absolute inset-0 bg-black/20" (click)="closeEditModal()"></div>
+
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
+            <div>
+              <h2 class="text-xl font-semibold text-foreground">Editar paciente</h2>
+              <p class="mt-1 text-muted-foreground">Actualiza los datos del paciente.</p>
+
+              <p class="mt-2 text-xs text-muted-foreground">
+                ID: <span class="font-semibold text-foreground">{{ selected?.id || '—' }}</span>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              (click)="closeEditModal()"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              aria-label="Cerrar"
+            >
+              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"></path>
+                <path d="M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="px-7 py-6">
+            <div class="grid gap-5">
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Nombre completo</label>
+                <input
+                  [(ngModel)]="editFullName"
+                  class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                         text-foreground placeholder:text-muted-foreground
+                         focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label class="block text-sm font-semibold text-foreground mb-2">DNI</label>
+                  <input
+                    [(ngModel)]="editDni"
+                    class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                           text-foreground placeholder:text-muted-foreground
+                           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-foreground mb-2">Teléfono</label>
+                  <input
+                    [(ngModel)]="editPhone"
+                    class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                           text-foreground placeholder:text-muted-foreground
+                           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Email</label>
+                <input
+                  [(ngModel)]="editEmail"
+                  class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                         text-foreground placeholder:text-muted-foreground
+                         focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="closeEditModal()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              (click)="saveEdit()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground"
+            >
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</section>

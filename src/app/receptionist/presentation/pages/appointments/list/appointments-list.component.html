@@ -1,0 +1,649 @@
+<section class="min-h-[calc(100vh-80px)] py-8 md:py-10">
+  <div class="container mx-auto px-4 sm:px-6">
+
+    <!-- Header -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div>
+        <h1 class="font-heading text-3xl sm:text-4xl font-semibold text-foreground">
+          Citas
+        </h1>
+        <p class="mt-2 text-muted-foreground max-w-2xl">
+          Gestiona todas las citas del consultorio
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="openCreateModal()"
+          class="inline-flex items-center gap-3 rounded-2xl px-5 py-3 text-sm font-semibold
+                 bg-primary text-primary-foreground transition"
+        >
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          </span>
+          Nueva Cita
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mt-8 bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-5">
+      <div class="grid gap-3 lg:grid-cols-[1fr_260px_280px] items-center">
+
+        <!-- Search -->
+        <div>
+          <div class="relative">
+            <svg
+              class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+
+            <input
+              [(ngModel)]="q"
+              placeholder="Buscar por nombre o DNI..."
+              class="h-12 w-full rounded-2xl border border-border bg-background pl-12 pr-4
+                     text-foreground placeholder:text-muted-foreground
+                     focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+          </div>
+        </div>
+
+        <!-- Status select -->
+        <div class="relative">
+          <svg
+            class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          >
+            <path d="M4 6h16"></path>
+            <path d="M7 12h10"></path>
+            <path d="M10 18h4"></path>
+          </svg>
+
+          <select
+            [(ngModel)]="status"
+            class="h-12 w-full appearance-none rounded-2xl border border-border bg-background pl-12 pr-10
+                   text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          >
+            <option value="all">Todos</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Confirmada">Confirmada</option>
+            <option value="Cancelada">Cancelada</option>
+            <option value="Completada">Completada</option>
+          </select>
+
+          <svg class="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </div>
+
+        <!-- Date filter -->
+        <div class="relative" data-popover>
+          <button
+            type="button"
+            (click)="toggleDatePicker()"
+            class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                   text-sm font-semibold text-foreground flex items-center justify-center gap-3
+                   focus:outline-none focus:ring-2 focus:ring-primary/30"
+            [class.ring-2]="isDatePickerOpen"
+            [class.ring-primary]="isDatePickerOpen"
+          >
+            <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 2v4"></path>
+              <path d="M16 2v4"></path>
+              <path d="M3 10h18"></path>
+              <path d="M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
+            </svg>
+
+            <span *ngIf="dateFilter; else noDate">{{ formatDateES(dateFilter) }}</span>
+            <ng-template #noDate>Filtrar fecha</ng-template>
+          </button>
+
+          @if (isDatePickerOpen) {
+            <div
+              class="absolute right-0 mt-3 w-[360px] rounded-2xl border border-border bg-card shadow-lg p-5 z-50"
+              data-popover
+            >
+              <div class="flex items-center justify-between">
+                <button
+                  type="button"
+                  (click)="prevMonth()"
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background hover:bg-muted transition"
+                  aria-label="Mes anterior"
+                >
+                  <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"></path>
+                  </svg>
+                </button>
+
+                <div class="text-base font-semibold text-foreground">
+                  {{ monthLabel }}
+                </div>
+
+                <button
+                  type="button"
+                  (click)="nextMonth()"
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background hover:bg-muted transition"
+                  aria-label="Mes siguiente"
+                >
+                  <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mt-4 grid grid-cols-7 gap-1 text-center text-sm font-semibold text-muted-foreground">
+                @for (w of weekLabels; track w) {
+                  <div class="py-2">{{ w }}</div>
+                }
+              </div>
+
+              <div class="grid grid-cols-7 gap-1">
+                @for (week of calendarWeeks; track $index) {
+                  @for (cell of week; track cell.iso) {
+                    <button
+                      type="button"
+                      (click)="pickDate(cell)"
+                      class="h-12 rounded-xl text-sm font-semibold transition flex items-center justify-center"
+                      [ngClass]="{
+                        'text-muted-foreground': !cell.inMonth,
+                        'text-foreground': cell.inMonth && !cell.isSelected,
+                        'bg-primary text-primary-foreground': cell.isSelected,
+                        'ring-2 ring-primary': cell.isToday && !cell.isSelected
+                      }"
+                    >
+                      {{ cell.day }}
+                    </button>
+                  }
+                }
+              </div>
+
+              <div class="mt-5 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  (click)="clearDateFilter()"
+                  class="h-11 rounded-2xl px-4 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+                >
+                  Limpiar
+                </button>
+
+                <button
+                  type="button"
+                  (click)="closeDatePicker()"
+                  class="h-11 rounded-2xl px-4 text-sm font-semibold bg-primary text-primary-foreground"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <button
+          type="button"
+          (click)="resetFilters()"
+          class="text-sm font-semibold text-muted-foreground hover:text-foreground transition"
+        >
+          Resetear filtros
+        </button>
+      </div>
+    </div>
+
+    <!-- States -->
+    @if (isLoading) {
+      <div class="mt-8 bg-card rounded-2xl border border-border p-10 text-center text-muted-foreground">
+        Cargando citas...
+      </div>
+    } @else if (hasError) {
+      <div class="mt-8 bg-card rounded-2xl border border-border p-10 text-center">
+        <p class="font-semibold text-foreground">Ocurrió un error</p>
+        <p class="text-muted-foreground mt-1">Intenta nuevamente.</p>
+        <button
+          type="button"
+          class="mt-4 inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold
+                 bg-primary text-primary-foreground"
+        >
+          Reintentar
+        </button>
+      </div>
+    } @else {
+
+      <div class="mt-8 bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-primary/5 text-foreground">
+            <tr class="border-b border-border">
+              <th class="px-6 py-4 text-left font-semibold">Fecha</th>
+              <th class="px-6 py-4 text-left font-semibold">Hora</th>
+              <th class="px-6 py-4 text-left font-semibold">Paciente</th>
+              <th class="px-6 py-4 text-left font-semibold">Estado</th>
+              <th class="px-6 py-4 text-left font-semibold">Notas</th>
+              <th class="px-6 py-4 text-right font-semibold">Acciones</th>
+            </tr>
+            </thead>
+
+            <tbody class="divide-y divide-border">
+              @if (filteredRows.length === 0) {
+                <tr>
+                  <td class="px-6 py-12 text-center text-muted-foreground" colspan="6">
+                    No hay resultados con esos filtros.
+                  </td>
+                </tr>
+              } @else {
+                @for (row of filteredRows; track row.id) {
+                  <tr class="bg-card">
+                    <td class="px-6 py-6">
+                      <div class="flex items-center gap-3">
+                        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M8 2v4"></path>
+                          <path d="M16 2v4"></path>
+                          <path d="M3 10h18"></path>
+                          <path d="M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
+                        </svg>
+                        <span class="font-medium text-foreground">{{ formatDateES(row.date) }}</span>
+                      </div>
+                    </td>
+
+                    <td class="px-6 py-6">
+                      <div class="flex items-center gap-3">
+                        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M12 6v6l4 2"></path>
+                        </svg>
+                        <span class="font-medium text-foreground">{{ row.time }}</span>
+                      </div>
+                    </td>
+
+                    <td class="px-6 py-6">
+                      <p class="font-semibold text-foreground">{{ row.patientName }}</p>
+                      <p class="text-sm text-muted-foreground">DNI: {{ row.dni }}</p>
+                    </td>
+
+                    <td class="px-6 py-6">
+                      <span
+                        class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold border"
+                        [ngClass]="{
+                          'bg-emerald-500/15 text-emerald-700 border-emerald-500/30': row.status === 'Confirmada',
+                          'bg-amber-500/15 text-amber-700 border-amber-500/30': row.status === 'Pendiente',
+                          'bg-destructive/15 text-destructive border-destructive/30': row.status === 'Cancelada',
+                          'bg-sky-500/15 text-sky-700 border-sky-500/30': row.status === 'Completada'
+                        }"
+                      >
+                        {{ row.status }}
+                      </span>
+                    </td>
+
+                    <td class="px-6 py-6">
+                      <span class="text-foreground" *ngIf="row.notes?.trim(); else noNotes">{{ row.notes }}</span>
+                      <ng-template #noNotes><span class="text-muted-foreground">—</span></ng-template>
+                    </td>
+
+                    <td class="px-6 py-6 text-right relative" data-popover>
+                      <button
+                        type="button"
+                        (click)="toggleRowMenu(row.id)"
+                        class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background hover:bg-muted transition"
+                        aria-label="Acciones"
+                      >
+                        <svg class="h-6 w-6 text-foreground" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="5" r="1.8"></circle>
+                          <circle cx="12" cy="12" r="1.8"></circle>
+                          <circle cx="12" cy="19" r="1.8"></circle>
+                        </svg>
+                      </button>
+
+                      @if (openRowMenuId === row.id) {
+                        <div
+                          class="absolute right-0 mt-3 w-56 rounded-2xl border border-border bg-card shadow-lg overflow-hidden z-50"
+                          data-popover
+                        >
+                          <button
+                            type="button"
+                            (click)="openDetailModal(row)"
+                            class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+                          >
+                            <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="3"></circle>
+                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"></path>
+                            </svg>
+                            Ver detalles
+                          </button>
+
+                          <button
+                            type="button"
+                            (click)="openRescheduleModal(row)"
+                            class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+                          >
+                            <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M3 12a9 9 0 1 0 9-9"></path>
+                              <path d="M3 4v8h8"></path>
+                            </svg>
+                            Reprogramar
+                          </button>
+
+                          <div class="h-px bg-border"></div>
+
+                          <button
+                            type="button"
+                            (click)="deleteRow(row)"
+                            class="w-full px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-muted transition flex items-center gap-3"
+                          >
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M18 6 6 18"></path>
+                              <path d="M6 6l12 12"></path>
+                            </svg>
+                            Cancelar
+                          </button>
+                        </div>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- =========================
+       MODAL: Nueva Cita
+       ========================= -->
+  @if (isCreateModalOpen) {
+    <div class="fixed inset-0 z-[60]" data-popover>
+      <div class="absolute inset-0 bg-black/50" (click)="closeCreateModal()"></div>
+
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden">
+          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
+            <div>
+              <h2 class="text-xl font-semibold text-foreground">Nueva Cita</h2>
+              <p class="mt-1 text-muted-foreground">Programa una nueva cita para un paciente.</p>
+            </div>
+
+            <button
+              type="button"
+              (click)="closeCreateModal()"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              aria-label="Cerrar"
+            >
+              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"></path>
+                <path d="M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="px-7 py-6">
+            <div class="grid gap-5">
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Paciente</label>
+                <input
+                  [(ngModel)]="formPatientQuery"
+                  placeholder="Buscar paciente por nombre o DNI..."
+                  class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                         text-foreground placeholder:text-muted-foreground
+                         focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label class="block text-sm font-semibold text-foreground mb-2">Fecha</label>
+                  <input
+                    [(ngModel)]="formDate"
+                    type="date"
+                    class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                           text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-foreground mb-2">Hora</label>
+                  <select
+                    [(ngModel)]="formHour"
+                    class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                           text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  >
+                    <option value="" disabled>Hora</option>
+                    @for (h of hours; track h) {
+                      <option [value]="h">{{ h }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-foreground mb-2">Notas (opcional)</label>
+                <textarea
+                  [(ngModel)]="formNotes"
+                  rows="4"
+                  placeholder="Notas adicionales sobre la cita..."
+                  class="w-full rounded-2xl border border-border bg-background px-4 py-3
+                         text-foreground placeholder:text-muted-foreground
+                         focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="closeCreateModal()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              (click)="createAppointment()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground"
+            >
+              Crear Cita
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- =========================
+       MODAL: Detalles Cita
+       ========================= -->
+  @if (isDetailModalOpen) {
+    <div class="fixed inset-0 z-[60]" data-popover>
+      <div class="absolute inset-0 bg-black/20" (click)="closeDetailModal()"></div>
+
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
+            <div>
+              <h2 class="text-xl font-semibold text-foreground">Detalles de la cita</h2>
+              <p class="mt-1 text-muted-foreground">Información completa de la cita.</p>
+
+              <p class="mt-2 text-xs text-muted-foreground">
+                ID:
+                <span class="font-semibold text-foreground">{{ detailRow?.id || '—' }}</span>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              (click)="closeDetailModal()"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              aria-label="Cerrar"
+            >
+              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"></path>
+                <path d="M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="px-7 py-6">
+            <div class="grid gap-5">
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <div class="text-xs text-muted-foreground">Paciente</div>
+                  <div class="mt-1 font-semibold text-foreground">{{ detailRow?.patientName || '—' }}</div>
+                  <div class="mt-1 text-sm text-muted-foreground">DNI: {{ detailRow?.dni || '—' }}</div>
+                </div>
+
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <div class="text-xs text-muted-foreground">Contacto</div>
+                  <div class="mt-1 font-semibold text-foreground">{{ detailRow?.phone || '—' }}</div>
+                  <div class="mt-1 text-sm text-muted-foreground">Estado: {{ detailRow?.status || '—' }}</div>
+                </div>
+              </div>
+
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <div class="text-xs text-muted-foreground">Fecha</div>
+                  <div class="mt-1 font-semibold text-foreground">
+                    {{ detailRow?.date ? formatDateES(detailRow!.date) : '—' }}
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <div class="text-xs text-muted-foreground">Hora</div>
+                  <div class="mt-1 font-semibold text-foreground">{{ detailRow?.time || '—' }}</div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-border bg-background p-4">
+                <div class="text-xs text-muted-foreground">Motivo</div>
+                <div class="mt-1 font-semibold text-foreground">{{ detailRow?.reason || '—' }}</div>
+              </div>
+
+              <div class="rounded-2xl border border-border bg-background p-4">
+                <div class="text-xs text-muted-foreground">Notas</div>
+                <div class="mt-1 text-foreground">
+                  {{ detailRow?.notes?.trim() ? detailRow!.notes : '—' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="closeDetailModal()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- =========================
+       MODAL: Reprogramar Cita
+       ========================= -->
+  @if (isRescheduleModalOpen) {
+    <div class="fixed inset-0 z-[60]" data-popover>
+      <div class="absolute inset-0 bg-black/20" (click)="closeRescheduleModal()"></div>
+
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          class="w-full max-w-[520px] rounded-3xl bg-card border border-border shadow-xl overflow-hidden"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
+            <div>
+              <h2 class="text-xl font-semibold text-foreground">Reprogramar Cita</h2>
+              <p class="mt-1 text-muted-foreground">Selecciona la nueva fecha y hora.</p>
+
+              <p class="mt-2 text-xs text-muted-foreground">
+                ID:
+                <span class="font-semibold text-foreground">{{ rescheduleRow?.id || '—' }}</span>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              (click)="closeRescheduleModal()"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              aria-label="Cerrar"
+            >
+              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"></path>
+                <path d="M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="px-7 py-6">
+            <div class="grid gap-5">
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label class="block text-sm font-semibold text-foreground mb-2">Nueva fecha</label>
+                  <input
+                    [(ngModel)]="rescheduleDate"
+                    type="date"
+                    class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                           text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-foreground mb-2">Nueva hora</label>
+                  <select
+                    [(ngModel)]="rescheduleTime"
+                    class="h-12 w-full rounded-2xl border border-border bg-background px-4
+                           text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  >
+                    @for (h of hours; track h) {
+                      <option [value]="h">{{ h }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <div class="text-xs text-muted-foreground">
+                Se actualizará la cita seleccionada con la nueva fecha y hora.
+              </div>
+            </div>
+          </div>
+
+          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="closeRescheduleModal()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              (click)="saveReschedule()"
+              class="h-12 rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</section>
