@@ -119,6 +119,10 @@
               }
             </div>
 
+            @if (errorMsg) {
+              <p class="text-sm text-red-600 mt-2">{{ errorMsg }}</p>
+            }
+
 
             <!-- Submit -->
             <button

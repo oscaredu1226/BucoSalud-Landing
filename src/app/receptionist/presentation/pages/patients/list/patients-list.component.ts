@@ -1,18 +1,22 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../../../shared/toast/toast.service';
+import {
+  PatientHttpRepository,
+  PatientRow,
+} from '../../../../infrastructure/http/repositories/patient.http-repository';
 
 type PatientStatus = 'active' | 'inactive';
 
 type PatientRowVM = {
-  id: string;
+  id: string; // UUID real
   fullName: string;
   dni: string;
   phone?: string;
   email?: string;
-  lastVisit?: string; // ISO date (YYYY-MM-DD o ISO full)
-  status: PatientStatus;
+  lastVisit?: string; // (no está en DB por ahora)
+  status: PatientStatus; // (no está en DB por ahora, lo dejamos en UI)
 };
 
 @Component({
@@ -21,8 +25,15 @@ type PatientRowVM = {
   imports: [CommonModule, FormsModule],
   templateUrl: './patients-list.component.html',
 })
-export class PatientsListComponent {
-  constructor(private readonly toast: ToastService) {}
+export class PatientsListComponent implements OnInit {
+  constructor(
+    private readonly toast: ToastService,
+    private readonly patientsRepo: PatientHttpRepository,
+
+  ) {}
+
+  // ===== State =====
+  loading = false;
 
   // search
   query = '';
@@ -44,7 +55,7 @@ export class PatientsListComponent {
   // seleccionado
   selected: PatientRowVM | null = null;
 
-  // forms (mock)
+  // forms (UI)
   formFullName = '';
   formDni = '';
   formPhone = '';
@@ -55,48 +66,30 @@ export class PatientsListComponent {
   editPhone = '';
   editEmail = '';
 
-  // data mock
-  patients: PatientRowVM[] = [
-    {
-      id: 'PAT-1001',
-      fullName: 'María López García',
-      dni: '12345678',
-      phone: '987654321',
-      email: 'maria@example.com',
-      lastVisit: '2025-01-09',
-      status: 'active',
-    },
-    {
-      id: 'PAT-1002',
-      fullName: 'Carlos Mendoza Ruiz',
-      dni: '23456789',
-      phone: '912345678',
-      lastVisit: '2025-01-17',
-      status: 'active',
-    },
-    {
-      id: 'PAT-1003',
-      fullName: 'Ana Fernández Torres',
-      dni: '34567890',
-      email: 'ana@example.com',
-      status: 'inactive',
-    },
-    {
-      id: 'PAT-1004',
-      fullName: 'Roberto Sánchez Vega',
-      dni: '45678901',
-      phone: '923456789',
-      email: 'roberto@example.com',
-      lastVisit: '2025-01-14',
-      status: 'active',
-    },
-    {
-      id: 'PAT-1005',
-      fullName: 'Elena Morales Díaz',
-      dni: '56789012',
-      status: 'inactive',
-    },
-  ];
+  // data (ahora real)
+  patients: PatientRowVM[] = [];
+
+  // =========================
+  // Init
+  // =========================
+  async ngOnInit() {
+    await this.loadPatients();
+  }
+
+  private async loadPatients() {
+    this.loading = true;
+
+    const { data, error } = await this.patientsRepo.list(200);
+
+    this.loading = false;
+
+    if (error) {
+      this.toast.error('Error', error.message);
+      return;
+    }
+
+    this.patients = (data ?? []).map((r) => this.toVM(r));
+  }
 
   // =========================
   // Computed
@@ -157,13 +150,12 @@ export class PatientsListComponent {
     this.isCreateModalOpen = false;
   }
 
-  createPatient() {
+  async createPatient() {
     const fullName = this.formFullName.trim();
     const dni = this.formDni.trim();
     const phone = this.formPhone.trim();
     const email = this.formEmail.trim();
 
-    // ✅ BADWAY: validación
     if (!fullName) {
       this.toast.error('Campos incompletos', 'Ingresa el nombre completo');
       return;
@@ -173,28 +165,44 @@ export class PatientsListComponent {
       return;
     }
 
-    // ✅ BADWAY: DNI duplicado
-    if (this.isDniTaken(dni)) {
-      this.toast.error('DNI duplicado', 'Ya existe un paciente con ese DNI');
+    const split = this.splitFullName(fullName);
+    if (!split) {
+      this.toast.error('Nombre inválido', 'Ingresa al menos nombres y apellidos (2 palabras)');
       return;
     }
 
-    const nextId = this.nextId();
+    this.loading = true;
 
-    const newPatient: PatientRowVM = {
-      id: nextId,
-      fullName,
+    const { data, error } = await this.patientsRepo.create({
+      first_names: split.first_names,
+      last_names: split.last_names,
       dni,
-      phone: phone || undefined,
-      email: email || undefined,
-      status: 'active',
-      lastVisit: undefined,
-    };
+      phone: phone || null,
+      email: email || null,
+      notes: null,
+    });
 
+    this.loading = false;
+
+    if (error) {
+      // DNI duplicado (unique constraint)
+      if (this.isUniqueViolation(error)) {
+        this.toast.error('DNI duplicado', 'Ya existe un paciente con ese DNI');
+        return;
+      }
+      this.toast.error('Error', error.message);
+      return;
+    }
+
+    if (!data) {
+      this.toast.error('Error', 'No se pudo crear el paciente');
+      return;
+    }
+
+    const newPatient = this.toVM(data);
     this.patients = [newPatient, ...this.patients];
     this.closeCreateModal();
 
-    // ✅ GOODWAY
     this.toast.success('Paciente creado', `${newPatient.fullName} · DNI ${newPatient.dni}`);
   }
 
@@ -205,8 +213,7 @@ export class PatientsListComponent {
     this.closeRowMenu();
     this.selected = p;
     this.isDetailModalOpen = true;
-
-    this.toast.info('Detalles', `Abriendo ${p.id}`); // opcional
+    this.toast.info('Detalles', `Abriendo ${p.id}`);
   }
 
   closeDetailModal() {
@@ -226,10 +233,8 @@ export class PatientsListComponent {
     this.editPhone = p.phone ?? '';
     this.editEmail = p.email ?? '';
 
-    // si estaba el modal de detalles, lo puedes dejar abierto o no; aquí lo dejamos tal cual.
     this.isEditModalOpen = true;
-
-    this.toast.info('Editar', `Editando ${p.id}`); // opcional
+    this.toast.info('Editar', `Editando ${p.id}`);
   }
 
   closeEditModal() {
@@ -237,7 +242,7 @@ export class PatientsListComponent {
     this.selected = null;
   }
 
-  saveEdit() {
+  async saveEdit() {
     if (!this.selected) {
       this.toast.error('Error', 'No se encontró el paciente a editar');
       return;
@@ -248,7 +253,6 @@ export class PatientsListComponent {
     const phone = this.editPhone.trim();
     const email = this.editEmail.trim();
 
-    // ✅ BADWAY: validación
     if (!fullName) {
       this.toast.error('Campos incompletos', 'El nombre no puede estar vacío');
       return;
@@ -258,32 +262,49 @@ export class PatientsListComponent {
       return;
     }
 
-    // ✅ BADWAY: DNI duplicado (solo si cambió y pertenece a otro)
-    if (dni !== this.selected.dni && this.isDniTaken(dni, this.selected.id)) {
-      this.toast.error('DNI duplicado', 'Ese DNI ya está registrado en otro paciente');
+    const split = this.splitFullName(fullName);
+    if (!split) {
+      this.toast.error('Nombre inválido', 'Ingresa al menos nombres y apellidos (2 palabras)');
       return;
     }
 
     const id = this.selected.id;
 
-    const updated: PatientRowVM = {
-      ...this.selected,
-      fullName,
+    this.loading = true;
+
+    const { data, error } = await this.patientsRepo.update(id, {
+      first_names: split.first_names,
+      last_names: split.last_names,
       dni,
-      phone: phone || undefined,
-      email: email || undefined,
-    };
+      phone: phone || null,
+      email: email || null,
+    });
+
+    this.loading = false;
+
+    if (error) {
+      if (this.isUniqueViolation(error)) {
+        this.toast.error('DNI duplicado', 'Ese DNI ya está registrado en otro paciente');
+        return;
+      }
+      this.toast.error('Error', error.message);
+      return;
+    }
+
+    if (!data) {
+      this.toast.error('Error', 'No se pudo actualizar el paciente');
+      return;
+    }
+
+    const updated = this.toVM(data);
 
     this.patients = this.patients.map((x) => (x.id === id ? updated : x));
 
-    // Si el modal de detalles estaba abierto con este mismo paciente, actualiza referencia
     if (this.isDetailModalOpen && this.selected?.id === id) {
       this.selected = updated;
     }
 
     this.closeEditModal();
-
-    // ✅ GOODWAY
     this.toast.success('Paciente actualizado', `${updated.fullName} · DNI ${updated.dni}`);
   }
 
@@ -304,9 +325,21 @@ export class PatientsListComponent {
     this.pendingDelete = null;
   }
 
-  confirmDelete() {
+  async confirmDelete() {
     const p = this.pendingDelete;
     if (!p) return;
+
+    this.loading = true;
+
+    const { error } = await this.patientsRepo.remove(p.id);
+
+    this.loading = false;
+
+    if (error) {
+      // Si tiene citas asociadas, tu FK está con RESTRICT (no deja borrar)
+      this.toast.error('No se pudo eliminar', error.message);
+      return;
+    }
 
     this.patients = this.patients.filter((x) => x.id !== p.id);
 
@@ -316,8 +349,6 @@ export class PatientsListComponent {
     }
 
     this.closeConfirmDelete();
-
-    // ✅ GOODWAY
     this.toast.success('Paciente eliminado', `${p.fullName}`);
   }
 
@@ -342,24 +373,38 @@ export class PatientsListComponent {
   }
 
   // =========================
-  // utils
+  // Mapping + helpers
   // =========================
-  private nextId(): string {
-    let max = 1000;
-    for (const r of this.patients) {
-      const n = Number(r.id.replace('PAT-', ''));
-      if (!Number.isNaN(n)) max = Math.max(max, n);
-    }
-    return `PAT-${max + 1}`;
+  private toVM(r: PatientRow): PatientRowVM {
+    const fullName = `${r.first_names ?? ''} ${r.last_names ?? ''}`.trim();
+
+    return {
+      id: r.id,
+      fullName: fullName || '(Sin nombre)',
+      dni: r.dni,
+      phone: r.phone ?? undefined,
+      email: r.email ?? undefined,
+      lastVisit: undefined, // no lo tenemos en DB aún
+      status: 'active', // MVP: default active
+    };
   }
 
-  private isDniTaken(dni: string, ignoreId?: string): boolean {
-    const needle = dni.trim();
-    if (!needle) return false;
+  private splitFullName(fullName: string): { first_names: string; last_names: string } | null {
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    if (parts.length < 2) return null;
 
-    return this.patients.some((p) => {
-      if (ignoreId && p.id === ignoreId) return false;
-      return p.dni.trim() === needle;
-    });
+    const last_names = parts.slice(-1).join(' ');
+    const first_names = parts.slice(0, -1).join(' ');
+
+    if (!first_names || !last_names) return null;
+    return { first_names, last_names };
+  }
+
+  // Detecta unique violation típico de Postgres (dni unique)
+  private isUniqueViolation(error: any): boolean {
+    // Supabase suele devolver code '23505' o un mensaje que contiene 'duplicate key value'
+    const code = error?.code;
+    const msg = String(error?.message ?? '');
+    return code === '23505' || msg.toLowerCase().includes('duplicate key');
   }
 }
