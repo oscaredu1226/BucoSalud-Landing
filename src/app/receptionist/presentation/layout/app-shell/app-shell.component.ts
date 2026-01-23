@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { NgClass } from '@angular/common';
 
 type NavItem = {
   label: string;
   path: string;
-  icon: 'dashboard' | 'agenda' | 'appointments' | 'patients' | 'availability';
+  icon: 'dashboard' | 'agenda' | 'appointments' | 'patients' | 'availability' | 'settings';
 };
 
 @Component({
@@ -36,6 +36,7 @@ export class AppShellComponent {
   }
 
   logout() {
+    // si luego metes auth real: aquí limpias token/session y rediriges
     this.closeMobileMenu();
     this.router.navigate(['/login']);
   }
