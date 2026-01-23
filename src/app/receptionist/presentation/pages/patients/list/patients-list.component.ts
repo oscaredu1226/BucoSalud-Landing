@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../../../shared/toast/toast.service';
@@ -7,16 +7,18 @@ import {
   PatientRow,
 } from '../../../../infrastructure/http/repositories/patient.http-repository';
 
+import { AppointmentHttpRepository } from '../../../../infrastructure/http/repositories/appointment.http-repository';
+
 type PatientStatus = 'active' | 'inactive';
 
 type PatientRowVM = {
-  id: string; // UUID real
+  id: string;
   fullName: string;
   dni: string;
   phone?: string;
   email?: string;
-  lastVisit?: string; // (no está en DB por ahora)
-  status: PatientStatus; // (no está en DB por ahora, lo dejamos en UI)
+  lastVisit?: string;
+  status: PatientStatus;
 };
 
 @Component({
@@ -29,7 +31,8 @@ export class PatientsListComponent implements OnInit {
   constructor(
     private readonly toast: ToastService,
     private readonly patientsRepo: PatientHttpRepository,
-
+    private readonly apptRepo: AppointmentHttpRepository,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   // ===== State =====
@@ -41,12 +44,17 @@ export class PatientsListComponent implements OnInit {
   // dropdown por fila
   openRowMenuId: string | null = null;
 
+  // ✅ posición del menú (dropdown fixed)
+  menuPos = { top: 0, left: 0 };
+
+  menuPatient: PatientRowVM | null = null;
+
   // modales
   isCreateModalOpen = false;
   isDetailModalOpen = false;
   isEditModalOpen = false;
 
-  // ✅ Modal confirmación eliminar
+  // Modal confirmación eliminar
   isConfirmDeleteOpen = false;
   confirmTitle = 'Eliminar paciente';
   confirmMessage = '¿Seguro que deseas eliminar este paciente?';
@@ -66,7 +74,7 @@ export class PatientsListComponent implements OnInit {
   editPhone = '';
   editEmail = '';
 
-  // data (ahora real)
+  // data (real)
   patients: PatientRowVM[] = [];
 
   // =========================
@@ -78,6 +86,7 @@ export class PatientsListComponent implements OnInit {
 
   private async loadPatients() {
     this.loading = true;
+    this.cdr.detectChanges();
 
     const { data, error } = await this.patientsRepo.list(200);
 
@@ -85,10 +94,52 @@ export class PatientsListComponent implements OnInit {
 
     if (error) {
       this.toast.error('Error', error.message);
+      this.cdr.detectChanges();
       return;
     }
 
     this.patients = (data ?? []).map((r) => this.toVM(r));
+    this.cdr.detectChanges();
+
+    // ✅ AHORA: cargar última cita por paciente
+    const ids = this.patients.map((p) => p.id);
+    await this.loadLastVisits(ids);
+  }
+
+  // ✅ NUEVO: arma lastVisit (start_at) por paciente
+  private async loadLastVisits(patientIds: string[]) {
+    if (!patientIds.length) return;
+
+    // (no ponemos loading global para no parpadear la pantalla)
+    const { data, error } = await this.apptRepo.lastByPatientIds(patientIds, 5000);
+
+    if (error) {
+      // no romper la pantalla por esto
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Como viene DESC, el primer start_at por patient_id es el último.
+    const lastMap = new Map<string, string>();
+
+    for (const a of (data ?? []) as any[]) {
+      if (!lastMap.has(a.patient_id)) {
+        lastMap.set(a.patient_id, a.start_at);
+      }
+    }
+
+    this.patients = this.patients.map((p) => ({
+      ...p,
+      lastVisit: lastMap.get(p.id) ?? undefined,
+    }));
+
+    // Si el modal está abierto, refrescamos el selected para que cambie "Última cita"
+    if (this.isDetailModalOpen && this.selected) {
+      const updated = this.patients.find((x) => x.id === this.selected!.id);
+      if (updated) this.selected = updated;
+    }
+
+    this.cdr.detectChanges();
   }
 
   // =========================
@@ -116,21 +167,54 @@ export class PatientsListComponent implements OnInit {
     if (Number.isNaN(d.getTime())) return 'Sin citas';
 
     const day = d.getDate();
-    const month = d.getMonth(); // 0..11
+    const month = d.getMonth();
     const year = d.getFullYear();
     const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     return `${day} ${months[month]} ${year}`;
   }
 
   // =========================
-  // Row menu
+  // Row menu (fixed dropdown)
   // =========================
-  toggleRowMenu(rowId: string) {
-    this.openRowMenuId = this.openRowMenuId === rowId ? null : rowId;
+  toggleRowMenu(p: PatientRowVM, ev: MouseEvent) {
+    ev.stopPropagation();
+
+    if (this.openRowMenuId === p.id) {
+      this.closeRowMenu();
+      return;
+    }
+
+    this.openRowMenuId = p.id;
+    this.menuPatient = p;
+
+    const btn = ev.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+
+    const menuWidth = 208; // w-52 => 13rem => 208px
+    const gap = 8;
+    const padding = 8;
+
+    let left = rect.right - menuWidth;
+    const maxLeft = window.innerWidth - menuWidth - padding;
+    if (left < padding) left = padding;
+    if (left > maxLeft) left = maxLeft;
+
+    this.menuPos = {
+      top: rect.bottom + gap,
+      left,
+    };
+
+    this.cdr.detectChanges();
   }
 
   closeRowMenu() {
     this.openRowMenuId = null;
+    this.menuPatient = null;
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    if (this.openRowMenuId) this.closeRowMenu();
   }
 
   // =========================
@@ -172,6 +256,7 @@ export class PatientsListComponent implements OnInit {
     }
 
     this.loading = true;
+    this.cdr.detectChanges();
 
     const { data, error } = await this.patientsRepo.create({
       first_names: split.first_names,
@@ -185,17 +270,19 @@ export class PatientsListComponent implements OnInit {
     this.loading = false;
 
     if (error) {
-      // DNI duplicado (unique constraint)
       if (this.isUniqueViolation(error)) {
         this.toast.error('DNI duplicado', 'Ya existe un paciente con ese DNI');
+        this.cdr.detectChanges();
         return;
       }
       this.toast.error('Error', error.message);
+      this.cdr.detectChanges();
       return;
     }
 
     if (!data) {
       this.toast.error('Error', 'No se pudo crear el paciente');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -204,6 +291,10 @@ export class PatientsListComponent implements OnInit {
     this.closeCreateModal();
 
     this.toast.success('Paciente creado', `${newPatient.fullName} · DNI ${newPatient.dni}`);
+    this.cdr.detectChanges();
+
+    // ✅ refrescar lastVisit del nuevo (por si ya tiene citas, o para mantener consistencia)
+    await this.loadLastVisits([newPatient.id]);
   }
 
   // =========================
@@ -271,6 +362,7 @@ export class PatientsListComponent implements OnInit {
     const id = this.selected.id;
 
     this.loading = true;
+    this.cdr.detectChanges();
 
     const { data, error } = await this.patientsRepo.update(id, {
       first_names: split.first_names,
@@ -285,31 +377,39 @@ export class PatientsListComponent implements OnInit {
     if (error) {
       if (this.isUniqueViolation(error)) {
         this.toast.error('DNI duplicado', 'Ese DNI ya está registrado en otro paciente');
+        this.cdr.detectChanges();
         return;
       }
       this.toast.error('Error', error.message);
+      this.cdr.detectChanges();
       return;
     }
 
     if (!data) {
       this.toast.error('Error', 'No se pudo actualizar el paciente');
+      this.cdr.detectChanges();
       return;
     }
 
     const updated = this.toVM(data);
 
-    this.patients = this.patients.map((x) => (x.id === id ? updated : x));
+    // conservar lastVisit que ya tenía en la lista
+    const prev = this.patients.find((x) => x.id === id);
+    const merged: PatientRowVM = { ...updated, lastVisit: prev?.lastVisit };
+
+    this.patients = this.patients.map((x) => (x.id === id ? merged : x));
 
     if (this.isDetailModalOpen && this.selected?.id === id) {
-      this.selected = updated;
+      this.selected = merged;
     }
 
     this.closeEditModal();
-    this.toast.success('Paciente actualizado', `${updated.fullName} · DNI ${updated.dni}`);
+    this.toast.success('Paciente actualizado', `${merged.fullName} · DNI ${merged.dni}`);
+    this.cdr.detectChanges();
   }
 
   // =========================
-  // ✅ Confirmación eliminar
+  // Confirmación eliminar
   // =========================
   requestDelete(p: PatientRowVM) {
     this.closeRowMenu();
@@ -330,14 +430,15 @@ export class PatientsListComponent implements OnInit {
     if (!p) return;
 
     this.loading = true;
+    this.cdr.detectChanges();
 
     const { error } = await this.patientsRepo.remove(p.id);
 
     this.loading = false;
 
     if (error) {
-      // Si tiene citas asociadas, tu FK está con RESTRICT (no deja borrar)
       this.toast.error('No se pudo eliminar', error.message);
+      this.cdr.detectChanges();
       return;
     }
 
@@ -350,10 +451,11 @@ export class PatientsListComponent implements OnInit {
 
     this.closeConfirmDelete();
     this.toast.success('Paciente eliminado', `${p.fullName}`);
+    this.cdr.detectChanges();
   }
 
   // =========================
-  // Click outside close (solo dropdown)
+  // Click outside close
   // =========================
   @HostListener('document:click', ['$event'])
   onDocClick(ev: MouseEvent) {
@@ -366,10 +468,10 @@ export class PatientsListComponent implements OnInit {
     this.closeRowMenu();
   }
 
-  // ✅ ESC para cerrar confirm
   @HostListener('document:keydown.escape')
   onEsc() {
     if (this.isConfirmDeleteOpen) this.closeConfirmDelete();
+    if (this.openRowMenuId) this.closeRowMenu();
   }
 
   // =========================
@@ -384,8 +486,8 @@ export class PatientsListComponent implements OnInit {
       dni: r.dni,
       phone: r.phone ?? undefined,
       email: r.email ?? undefined,
-      lastVisit: undefined, // no lo tenemos en DB aún
-      status: 'active', // MVP: default active
+      lastVisit: undefined,
+      status: 'active',
     };
   }
 
@@ -400,9 +502,7 @@ export class PatientsListComponent implements OnInit {
     return { first_names, last_names };
   }
 
-  // Detecta unique violation típico de Postgres (dni unique)
   private isUniqueViolation(error: any): boolean {
-    // Supabase suele devolver code '23505' o un mensaje que contiene 'duplicate key value'
     const code = error?.code;
     const msg = String(error?.message ?? '');
     return code === '23505' || msg.toLowerCase().includes('duplicate key');

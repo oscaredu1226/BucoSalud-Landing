@@ -51,11 +51,14 @@ export class PatientHttpRepository {
   async update(id: string, payload: any) {
     return await supabase
       .from('patients')
-      .update(payload)
-      .eq('id', id)
+      .upsert(
+        { id, ...payload },
+        { onConflict: 'id' }
+      )
       .select('*')
-      .maybeSingle();
+      .single();
   }
+
 
   async remove(id: string) {
     return await supabase

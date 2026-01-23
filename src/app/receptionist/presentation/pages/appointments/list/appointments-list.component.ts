@@ -1,21 +1,30 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastService } from '../../../../../shared/toast/toast.service';
 
-type AppointmentStatus = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada';
+import { PatientHttpRepository, PatientRow } from '../../../../infrastructure/http/repositories/patient.http-repository';
+import { AppointmentHttpRepository } from '../../../../infrastructure/http/repositories/appointment.http-repository';
+
+type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled';
 
 type AppointmentRow = {
   id: string;
+
+  patientId: string; // ✅ nuevo (para update/delete)
   patientName: string;
   dni: string;
   phone: string;
+
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
+
   reason: string;
   status: AppointmentStatus;
   notes?: string;
+
+  _durationMin?: number;
 };
 
 type CalendarCell = {
@@ -32,10 +41,13 @@ type CalendarCell = {
   imports: [CommonModule, FormsModule],
   templateUrl: './appointments-list.component.html',
 })
-export class AppointmentsListComponent {
+export class AppointmentsListComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private readonly toast: ToastService,
+    private readonly patientsRepo: PatientHttpRepository,
+    private readonly apptRepo: AppointmentHttpRepository,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   isLoading = false;
@@ -75,53 +87,71 @@ export class AppointmentsListComponent {
   confirmMessage = '¿Seguro que deseas cancelar esta cita?';
   pendingDeleteRow: AppointmentRow | null = null;
 
-  // form modal (mock)
+  // form modal
   formPatientQuery = '';
   formDate: string = this.todayISO();
   formHour: string = '';
   formNotes = '';
   readonly hours: string[] = this.buildHours(10, 18);
 
+  // =========================
+  // ✅ Autocomplete paciente (NUEVO)
+  // =========================
+  selectedPatient: PatientRow | null = null;
+  patientResults: PatientRow[] = [];
+  isPatientDropdownOpen = false;
+  isPatientSearching = false;
+  private patientSearchTimer: any = null;
+
   // ✅ CALENDARIO CUSTOM (para filtro)
   viewMonth = this.startOfMonthISO(this.todayISO()); // YYYY-MM-01
   calendarWeeks: CalendarCell[][] = [];
   readonly weekLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  rows: AppointmentRow[] = [
-    {
-      id: 'APT-1001',
-      patientName: 'María Pérez',
-      dni: '74219833',
-      phone: '+51 987 654 321',
-      date: '2026-01-22',
-      time: '09:00',
-      reason: 'Control de rutina',
-      status: 'Confirmada',
-      notes: 'Control de rutina',
-    },
-    {
-      id: 'APT-1002',
-      patientName: 'Juan Pérez',
-      dni: '87654321',
-      phone: '+51 999 222 111',
-      date: '2026-01-22',
-      time: '10:30',
-      reason: 'Evaluación',
-      status: 'Pendiente',
-      notes: '',
-    },
-    {
-      id: 'APT-1003',
-      patientName: 'Ana López',
-      dni: '11223344',
-      phone: '+51 981 333 777',
-      date: '2026-01-22',
-      time: '14:00',
-      reason: 'Consulta',
-      status: 'Cancelada',
-      notes: '',
-    },
-  ];
+  // ✅ ahora viene desde supabase
+  rows: AppointmentRow[] = [];
+
+  // =========================
+  // INIT
+  // =========================
+  async ngOnInit() {
+    this.rebuildCalendar();
+    await this.loadAppointments();
+  }
+
+  private async loadAppointments() {
+    this.isLoading = true;
+    this.hasError = false;
+    this.cdr.detectChanges();
+
+    let fromIso = '';
+    let toIso = '';
+
+    if (this.dateFilter) {
+      fromIso = `${this.dateFilter}T00:00:00.000Z`;
+      const next = new Date(`${this.dateFilter}T00:00:00.000Z`);
+      next.setUTCDate(next.getUTCDate() + 1);
+      toIso = next.toISOString();
+    }
+
+    const resp = this.dateFilter
+      ? await this.apptRepo.listByDateRange(fromIso, toIso, 500)
+      : await this.apptRepo.list(500);
+
+    this.isLoading = false;
+
+    const { data, error } = resp as any;
+
+    if (error) {
+      this.hasError = true;
+      this.toast.error('Error', error.message ?? 'No se pudieron cargar las citas');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.rows = (data ?? []).map((r: any) => this.toVM(r));
+    this.cdr.detectChanges();
+  }
 
   // =========================
   // Computed / Helpers
@@ -155,6 +185,64 @@ export class AppointmentsListComponent {
   }
 
   // =========================
+  // ✅ Autocomplete paciente (MÉTODOS)
+  // =========================
+  private patientLabel(p: PatientRow): string {
+    const fullName = `${p.first_names ?? ''} ${p.last_names ?? ''}`.trim();
+    return `${fullName || '(Sin nombre)'} · DNI ${p.dni}`;
+  }
+
+  onPatientFocus() {
+    this.isPatientDropdownOpen = true;
+    // si ya hay texto, dispara búsqueda
+    this.onPatientInputChange();
+  }
+
+  onPatientInputChange() {
+    const q = this.formPatientQuery.trim();
+
+    // si el usuario escribe, invalidamos el seleccionado
+    this.selectedPatient = null;
+    this.isPatientDropdownOpen = true;
+
+    if (this.patientSearchTimer) clearTimeout(this.patientSearchTimer);
+
+    if (!q) {
+      this.patientResults = [];
+      this.isPatientSearching = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.isPatientSearching = true;
+    this.cdr.detectChanges();
+
+    this.patientSearchTimer = setTimeout(async () => {
+      const { data, error } = await this.patientsRepo.searchByNameOrDni(q, 8);
+
+      this.isPatientSearching = false;
+
+      if (error) {
+        this.patientResults = [];
+        this.toast.error('Error', error.message ?? 'No se pudo buscar el paciente');
+        this.cdr.detectChanges();
+        return;
+      }
+
+      this.patientResults = (data ?? []) as PatientRow[];
+      this.cdr.detectChanges();
+    }, 250);
+  }
+
+  selectPatient(p: PatientRow) {
+    this.selectedPatient = p;
+    this.formPatientQuery = this.patientLabel(p);
+    this.isPatientDropdownOpen = false;
+    this.patientResults = [];
+    this.cdr.detectChanges();
+  }
+
+  // =========================
   // ✅ Date picker (custom)
   // =========================
   toggleDatePicker() {
@@ -172,10 +260,11 @@ export class AppointmentsListComponent {
     this.isDatePickerOpen = false;
   }
 
-  clearDateFilter() {
+  async clearDateFilter() {
     this.dateFilter = '';
     this.rebuildCalendar();
-    this.toast.info('Filtro limpiado', 'Ahora estás viendo todas las fechas'); // ✅ info
+    this.toast.info('Filtro limpiado', 'Ahora estás viendo todas las fechas');
+    await this.loadAppointments();
   }
 
   get monthLabel(): string {
@@ -197,18 +286,19 @@ export class AppointmentsListComponent {
     this.rebuildCalendar();
   }
 
-  pickDate(cell: CalendarCell) {
+  async pickDate(cell: CalendarCell) {
     this.dateFilter = cell.iso;
     this.closeDatePicker();
-    this.toast.info('Filtro aplicado', `Fecha: ${this.formatDateES(cell.iso)}`); // ✅ info
+    this.toast.info('Filtro aplicado', `Fecha: ${this.formatDateES(cell.iso)}`);
+    await this.loadAppointments();
   }
 
   private rebuildCalendar() {
     const today = this.todayISO();
     const selected = this.dateFilter;
 
-    const first = new Date(this.viewMonth + 'T00:00:00'); // YYYY-MM-01
-    const startDow = first.getDay(); // 0..6
+    const first = new Date(this.viewMonth + 'T00:00:00');
+    const startDow = first.getDay();
 
     const start = new Date(first);
     start.setDate(first.getDate() - startDow);
@@ -222,7 +312,9 @@ export class AppointmentsListComponent {
         cur.setDate(start.getDate() + w * 7 + i);
 
         const iso = this.toISODate(cur);
-        const inMonth = cur.getMonth() === first.getMonth() && cur.getFullYear() === first.getFullYear();
+        const inMonth =
+          cur.getMonth() === first.getMonth() &&
+          cur.getFullYear() === first.getFullYear();
 
         row.push({
           iso,
@@ -250,13 +342,12 @@ export class AppointmentsListComponent {
     this.openRowMenuId = null;
   }
 
-  // lo dejo por si lo quieres usar después (ruta)
+  // rutas
   goToDetail(row: AppointmentRow) {
     this.closeRowMenu();
     this.router.navigate(['/receptionist/appointments', row.id]);
   }
 
-  // lo dejo por si lo quieres usar después (ruta)
   goToReschedule(row: AppointmentRow) {
     this.closeRowMenu();
     this.router.navigate(['/receptionist/appointments', row.id, 'reschedule']);
@@ -271,7 +362,7 @@ export class AppointmentsListComponent {
 
     this.pendingDeleteRow = row;
     this.confirmTitle = 'Cancelar cita';
-    this.confirmMessage = `¿Seguro que deseas cancelar la cita ${row.id}? Esta acción la quitará de la lista.`;
+    this.confirmMessage = `¿Seguro que deseas cancelar la cita ${row.id}?`;
     this.isConfirmDeleteOpen = true;
   }
 
@@ -280,18 +371,31 @@ export class AppointmentsListComponent {
     this.pendingDeleteRow = null;
   }
 
-  confirmDelete() {
+  async confirmDelete() {
     const row = this.pendingDeleteRow;
     if (!row) return;
 
-    this.rows = this.rows.filter((r) => r.id !== row.id);
-    this.toast.success('Cita cancelada', `Se canceló ${row.id}`); // ✅ goodway
+    this.isLoading = true;
+    this.cdr.detectChanges();
 
-    // si estaba abierta en detalles, ciérralo
+    const { error } = await this.apptRepo.remove(row.id);
+
+    this.isLoading = false;
+
+    if (error) {
+      this.toast.error('Error', error.message ?? 'No se pudo cancelar');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.rows = this.rows.filter((r) => r.id !== row.id);
+    this.toast.success('Cita cancelada', `Se canceló ${row.id}`);
+
     if (this.detailRow?.id === row.id) this.closeDetailModal();
     if (this.rescheduleRow?.id === row.id) this.closeRescheduleModal();
 
     this.closeConfirmDelete();
+    this.cdr.detectChanges();
   }
 
   // =========================
@@ -303,8 +407,7 @@ export class AppointmentsListComponent {
 
     this.detailRow = row;
     this.isDetailModalOpen = true;
-
-    this.toast.info('Detalles', `Abriendo ${row.id}`); // ✅ opcional
+    this.toast.info('Detalles', `Abriendo ${row.id}`);
   }
 
   closeDetailModal() {
@@ -331,7 +434,7 @@ export class AppointmentsListComponent {
     this.rescheduleRow = null;
   }
 
-  saveReschedule() {
+  async saveReschedule() {
     if (!this.rescheduleRow) {
       this.toast.error('Error', 'No se encontró la cita a reprogramar');
       return;
@@ -343,18 +446,38 @@ export class AppointmentsListComponent {
     }
 
     const id = this.rescheduleRow.id;
+    const duration = this.rescheduleRow._durationMin ?? 30;
+
+    const startAtIso = this.combineDateTimeISO(this.rescheduleDate, this.rescheduleTime);
+    const endAtIso = this.addMinutesISO(startAtIso, duration);
+
+    this.isLoading = true;
+    this.cdr.detectChanges();
+
+    const { data, error } = await this.apptRepo.update(id, {
+      start_at: startAtIso,
+      end_at: endAtIso,
+    });
+
+    this.isLoading = false;
+
+    if (error) {
+      this.toast.error('Error', error.message ?? 'No se pudo reprogramar');
+      this.cdr.detectChanges();
+      return;
+    }
 
     this.rows = this.rows.map((r) =>
       r.id === id ? { ...r, date: this.rescheduleDate, time: this.rescheduleTime } : r
     );
 
-    // si el modal de detalles estaba abierto para esa misma cita, actualízalo también
     if (this.detailRow?.id === id) {
       this.detailRow = { ...this.detailRow, date: this.rescheduleDate, time: this.rescheduleTime };
     }
 
     this.closeRescheduleModal();
     this.toast.success('Cita reprogramada', `${id} → ${this.formatDateES(this.rescheduleDate)} ${this.rescheduleTime}`);
+    this.cdr.detectChanges();
   }
 
   // =========================
@@ -365,20 +488,29 @@ export class AppointmentsListComponent {
     this.openRowMenuId = null;
     this.isDatePickerOpen = false;
 
+    // ✅ reset autocomplete
     this.formPatientQuery = '';
+    this.selectedPatient = null;
+    this.patientResults = [];
+    this.isPatientDropdownOpen = false;
+    this.isPatientSearching = false;
+
     this.formDate = this.todayISO();
     this.formHour = '';
     this.formNotes = '';
+    this.cdr.detectChanges();
   }
 
   closeCreateModal() {
     this.isCreateModalOpen = false;
+    this.isPatientDropdownOpen = false;
+    this.patientResults = [];
   }
 
-  createAppointment() {
-    // ✅ validaciones -> BADWAY
-    if (!this.formPatientQuery.trim()) {
-      this.toast.error('Campos incompletos', 'Ingresa el nombre o DNI del paciente');
+  async createAppointment() {
+    // ✅ ahora exige paciente seleccionado
+    if (!this.selectedPatient) {
+      this.toast.error('Paciente', 'Selecciona un paciente de la lista');
       return;
     }
     if (!this.formDate) {
@@ -390,28 +522,55 @@ export class AppointmentsListComponent {
       return;
     }
 
-    const nextId = this.nextId();
+    const patient = this.selectedPatient;
 
-    const newRow: AppointmentRow = {
-      id: nextId,
-      patientName: this.formPatientQuery.trim(),
-      dni: '—',
-      phone: '—',
-      date: this.formDate,
-      time: this.formHour,
-      reason: '—',
-      status: 'Pendiente',
-      notes: this.formNotes?.trim() || '',
-    };
+    const startAtIso = this.combineDateTimeISO(this.formDate, this.formHour);
+    const endAtIso = this.addMinutesISO(startAtIso, 30);
 
-    this.rows = [newRow, ...this.rows];
+    this.isLoading = true;
+    this.cdr.detectChanges();
+
+    const { data, error } = await this.apptRepo.create({
+      patient_id: patient.id,
+      start_at: startAtIso,
+      end_at: endAtIso,
+      status: 'confirmed',
+      notes: this.formNotes?.trim() || null,
+    });
+
+    this.isLoading = false;
+
+    if (error) {
+      this.toast.error('Error', error.message ?? 'No se pudo crear la cita');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (!data) {
+      this.toast.error('Error', 'No se pudo crear la cita');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const vm: AppointmentRow = this.toVM({
+      ...data,
+      patient: {
+        id: patient.id,
+        first_names: patient.first_names,
+        last_names: patient.last_names,
+        dni: patient.dni,
+        phone: patient.phone,
+      },
+    });
+
+    this.rows = [vm, ...this.rows];
     this.closeCreateModal();
 
-    // ✅ goodway
-    this.toast.success('Cita creada', `${newRow.patientName} · ${this.formatDateES(newRow.date)} ${newRow.time}`);
+    this.toast.success('Cita creada', `${vm.patientName} · ${this.formatDateES(vm.date)} ${vm.time}`);
+    this.cdr.detectChanges();
   }
 
-  resetFilters() {
+  async resetFilters() {
     this.q = '';
     this.status = 'all';
     this.dateFilter = this.todayISO();
@@ -420,6 +579,7 @@ export class AppointmentsListComponent {
     this.closeRowMenu();
 
     this.toast.info('Filtros reseteados', 'Mostrando citas de hoy');
+    await this.loadAppointments();
   }
 
   // =========================
@@ -435,12 +595,90 @@ export class AppointmentsListComponent {
 
     this.closeRowMenu();
     this.closeDatePicker();
+
+    // ✅ cerrar dropdown paciente
+    if (this.isPatientDropdownOpen) {
+      this.isPatientDropdownOpen = false;
+      this.cdr.detectChanges();
+    }
   }
 
-  // ✅ ESC para cerrar confirm
   @HostListener('document:keydown.escape')
   onEsc() {
     if (this.isConfirmDeleteOpen) this.closeConfirmDelete();
+
+    if (this.isPatientDropdownOpen) {
+      this.isPatientDropdownOpen = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // =========================
+  // MAPPING (DB -> UI)
+  // =========================
+  private toVM(r: any): AppointmentRow {
+    const patient = r.patient ?? r.patients ?? null;
+
+    const patientName = patient
+      ? `${patient.first_names ?? ''} ${patient.last_names ?? ''}`.trim()
+      : '(Sin paciente)';
+
+    const dni = patient?.dni ? String(patient.dni) : '—';
+    const phone = patient?.phone ?? '—';
+
+    const { date, time } = this.splitDateTimeLocal(r.start_at);
+
+    const durationMin = this.diffMinutes(r.start_at, r.end_at) ?? 30;
+
+    return {
+      id: r.id,
+      patientId: r.patient_id,
+      patientName: patientName || '(Sin paciente)',
+      dni,
+      phone,
+      date,
+      time,
+      reason: r.reason ?? '—',
+      status: (r.status ?? 'confirmed') as AppointmentStatus,
+      notes: r.notes ?? '',
+      _durationMin: durationMin,
+    };
+  }
+
+  private splitDateTimeLocal(iso: string): { date: string; time: string } {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return { date: this.todayISO(), time: '00:00' };
+
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+
+    return { date: `${y}-${m}-${day}`, time: `${hh}:${mm}` };
+  }
+
+  private diffMinutes(aIso?: string, bIso?: string): number | null {
+    if (!aIso || !bIso) return null;
+    const a = new Date(aIso).getTime();
+    const b = new Date(bIso).getTime();
+    if (Number.isNaN(a) || Number.isNaN(b)) return null;
+    return Math.max(1, Math.round((b - a) / 60000));
+  }
+
+  private combineDateTimeISO(date: string, time: string): string {
+    const [y, m, d] = date.split('-').map(Number);
+    const [hh, mm] = time.split(':').map(Number);
+
+    const local = new Date(y, (m - 1), d, hh, mm, 0);
+    return local.toISOString();
+  }
+
+  private addMinutesISO(iso: string, minutes: number): string {
+    const d = new Date(iso);
+    d.setMinutes(d.getMinutes() + minutes);
+    return d.toISOString();
   }
 
   // =========================
@@ -466,14 +704,5 @@ export class AppointmentsListComponent {
     const out: string[] = [];
     for (let h = from; h <= to; h++) out.push(`${String(h).padStart(2, '0')}:00`);
     return out;
-  }
-
-  private nextId(): string {
-    let max = 1000;
-    for (const r of this.rows) {
-      const n = Number(r.id.replace('APT-', ''));
-      if (!Number.isNaN(n)) max = Math.max(max, n);
-    }
-    return `APT-${max + 1}`;
   }
 }

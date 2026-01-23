@@ -72,121 +72,130 @@
           No se encontraron pacientes.
         </div>
       } @else {
-        <div class="divide-y divide-border">
-          @for (p of filtered; track trackById($index, p)) {
-            <div class="grid grid-cols-12 gap-4 px-6 py-5 items-center">
-              <!-- Paciente -->
-              <div class="col-span-5">
-                <div class="font-medium text-foreground">{{ p.fullName }}</div>
-              </div>
 
-              <!-- DNI -->
-              <div class="col-span-2 text-foreground/80">
-                {{ p.dni }}
-              </div>
+        <!-- ✅ CAMBIO 1: contenedor con alto fijo y scroll independiente -->
+        <div
+          class="max-h-[420px] overflow-y-auto overflow-x-hidden"
+          (scroll)="closeRowMenu()"
+        >
+          <div class="divide-y divide-border">
+            @for (p of filtered; track trackById($index, p)) {
+              <div class="grid grid-cols-12 gap-4 px-6 py-5 items-center">
+                <!-- Paciente -->
+                <div class="col-span-5">
+                  <div class="font-medium text-foreground">{{ p.fullName }}</div>
+                </div>
 
-              <!-- Contacto -->
-              <div class="col-span-3">
-                <div class="flex items-center gap-4 text-foreground/80">
-                  @if (p.phone) {
-                    <div class="flex items-center gap-2">
-                      <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.32 1.7.6 2.5a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.58-1.12a2 2 0 0 1 2.11-.45c.8.28 1.64.48 2.5.6A2 2 0 0 1 22 16.92z"></path>
-                      </svg>
-                      <span>{{ p.phone }}</span>
-                    </div>
-                  } @else {
-                    <span class="text-muted-foreground">Sin contacto</span>
-                  }
+                <!-- DNI -->
+                <div class="col-span-2 text-foreground/80">
+                  {{ p.dni }}
+                </div>
 
-                  @if (p.email) {
-                    <div class="flex items-center gap-2">
-                      <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4h16v16H4z"></path>
-                        <path d="m22 6-10 7L2 6"></path>
-                      </svg>
-                    </div>
-                  }
+                <!-- Contacto -->
+                <div class="col-span-3">
+                  <div class="flex items-center gap-4 text-foreground/80">
+                    @if (p.phone) {
+                      <div class="flex items-center gap-2">
+                        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.32 1.7.6 2.5a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.58-1.12a2 2 0 0 1 2.11-.45c.8.28 1.64.48 2.5.6A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        <span>{{ p.phone }}</span>
+                      </div>
+                    } @else {
+                      <span class="text-muted-foreground">Sin contacto</span>
+                    }
+
+                    @if (p.email) {
+                      <div class="flex items-center gap-2">
+                        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M4 4h16v16H4z"></path>
+                          <path d="m22 6-10 7L2 6"></path>
+                        </svg>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Última Cita -->
+                <div class="col-span-1 text-foreground/80">
+                  <span [class.text-muted-foreground]="!p.lastVisit">
+                    {{ formatLastVisit(p.lastVisit) }}
+                  </span>
+                </div>
+
+                <!-- Actions (kebab) -->
+                <div class="col-span-1 flex justify-end relative" data-popover>
+                  <button
+                    type="button"
+                    (click)="toggleRowMenu(p, $event)"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-muted transition"
+                    aria-label="Acciones"
+                  >
+                    <svg class="h-6 w-6 text-foreground" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="12" cy="5" r="1.8"></circle>
+                      <circle cx="12" cy="12" r="1.8"></circle>
+                      <circle cx="12" cy="19" r="1.8"></circle>
+                    </svg>
+                  </button>
                 </div>
               </div>
-
-              <!-- Última Cita -->
-              <div class="col-span-1 text-foreground/80">
-                <span [class.text-muted-foreground]="!p.lastVisit">
-                  {{ formatLastVisit(p.lastVisit) }}
-                </span>
-              </div>
-
-              <!-- Actions (kebab + dropdown) -->
-              <div class="col-span-1 flex justify-end relative" data-popover>
-                <button
-                  type="button"
-                  (click)="toggleRowMenu(p.id)"
-                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-muted transition"
-                  aria-label="Acciones"
-                >
-                  <svg class="h-6 w-6 text-foreground" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="5" r="1.8"></circle>
-                    <circle cx="12" cy="12" r="1.8"></circle>
-                    <circle cx="12" cy="19" r="1.8"></circle>
-                  </svg>
-                </button>
-
-                @if (openRowMenuId === p.id) {
-                  <div
-                    class="absolute right-0 top-11 w-52 rounded-2xl border border-border bg-card shadow-lg overflow-hidden z-50"
-                    data-popover
-                  >
-                    <button
-                      type="button"
-                      (click)="openDetailModal(p)"
-                      class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
-                    >
-                      <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"></path>
-                      </svg>
-                      Ver detalles
-                    </button>
-
-                    <button
-                      type="button"
-                      (click)="openEditModal(p)"
-                      class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
-                    >
-                      <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                      </svg>
-                      Editar
-                    </button>
-
-                    <div class="h-px bg-border"></div>
-
-                    <!-- ✅ CAMBIO: pedir confirmación -->
-                    <button
-                      type="button"
-                      (click)="requestDelete(p)"
-                      class="w-full px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-muted transition flex items-center gap-3"
-                    >
-                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 6h18"></path>
-                        <path d="M8 6V4h8v2"></path>
-                        <path d="M19 6l-1 14H6L5 6"></path>
-                        <path d="M10 11v6"></path>
-                        <path d="M14 11v6"></path>
-                      </svg>
-                      Eliminar
-                    </button>
-                  </div>
-                }
-              </div>
-            </div>
-          }
+            }
+          </div>
         </div>
       }
     </div>
   </div>
+
+  <!-- ✅ CAMBIO 2: Dropdown “teleport” fixed + z-index alto -->
+  @if (openRowMenuId && menuPatient) {
+    <div
+      class="fixed z-[9999] w-52 rounded-2xl border border-border bg-card shadow-lg overflow-hidden"
+      [style.top.px]="menuPos.top"
+      [style.left.px]="menuPos.left"
+      data-popover
+    >
+      <button
+        type="button"
+        (click)="openDetailModal(menuPatient)"
+        class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+      >
+        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"></path>
+        </svg>
+        Ver detalles
+      </button>
+
+      <button
+        type="button"
+        (click)="openEditModal(menuPatient)"
+        class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+      >
+        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+        </svg>
+        Editar
+      </button>
+
+      <div class="h-px bg-border"></div>
+
+      <button
+        type="button"
+        (click)="requestDelete(menuPatient)"
+        class="w-full px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-muted transition flex items-center gap-3"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18"></path>
+          <path d="M8 6V4h8v2"></path>
+          <path d="M19 6l-1 14H6L5 6"></path>
+          <path d="M10 11v6"></path>
+          <path d="M14 11v6"></path>
+        </svg>
+        Eliminar
+      </button>
+    </div>
+  }
 
   <!-- =========================
        MODAL: Nuevo Paciente

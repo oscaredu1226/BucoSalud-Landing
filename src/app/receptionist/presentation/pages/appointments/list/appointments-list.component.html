@@ -75,10 +75,9 @@
                    text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           >
             <option value="all">Todos</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Confirmada">Confirmada</option>
-            <option value="Cancelada">Cancelada</option>
-            <option value="Completada">Completada</option>
+            <option value="pending">Pendiente</option>
+            <option value="confirmed">Confirmada</option>
+            <option value="cancelled">Cancelada</option>
           </select>
 
           <svg class="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
@@ -280,10 +279,9 @@
                       <span
                         class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold border"
                         [ngClass]="{
-                          'bg-emerald-500/15 text-emerald-700 border-emerald-500/30': row.status === 'Confirmada',
-                          'bg-amber-500/15 text-amber-700 border-amber-500/30': row.status === 'Pendiente',
-                          'bg-destructive/15 text-destructive border-destructive/30': row.status === 'Cancelada',
-                          'bg-sky-500/15 text-sky-700 border-sky-500/30': row.status === 'Completada'
+                          'bg-emerald-500/15 text-emerald-700 border-emerald-500/30': row.status === 'confirmed',
+                          'bg-amber-500/15 text-amber-700 border-amber-500/30': row.status === 'pending',
+                          'bg-destructive/15 text-destructive border-destructive/30': row.status === 'cancelled',
                         }"
                       >
                         {{ row.status }}
@@ -342,7 +340,6 @@
 
                           <div class="h-px bg-border"></div>
 
-                          <!-- ✅ CAMBIO: ahora pide confirmación -->
                           <button
                             type="button"
                             (click)="requestDelete(row)"
@@ -375,7 +372,7 @@
       <div class="absolute inset-0 bg-black/50" (click)="closeCreateModal()"></div>
 
       <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden">
+        <div class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden" (click)="$event.stopPropagation()">
           <div class="flex items-start justify-between px-7 py-6 border-b border-border">
             <div>
               <h2 class="text-xl font-semibold text-foreground">Nueva Cita</h2>
@@ -398,15 +395,57 @@
 
           <div class="px-7 py-6">
             <div class="grid gap-5">
-              <div>
+              <!-- ✅ ÚNICO CAMBIO: Paciente con dropdown -->
+              <div class="relative" data-popover>
                 <label class="block text-sm font-semibold text-foreground mb-2">Paciente</label>
                 <input
                   [(ngModel)]="formPatientQuery"
+                  (ngModelChange)="onPatientInputChange()"
+                  (focus)="onPatientFocus()"
                   placeholder="Buscar paciente por nombre o DNI..."
                   class="h-12 w-full rounded-2xl border border-border bg-background px-4
                          text-foreground placeholder:text-muted-foreground
                          focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
+
+                @if (isPatientDropdownOpen) {
+                  <div
+                    class="absolute left-0 right-0 mt-2 rounded-2xl border border-border bg-card shadow-lg overflow-hidden z-50"
+                    data-popover
+                  >
+                    @if (isPatientSearching) {
+                      <div class="px-4 py-3 text-sm text-muted-foreground">Buscando...</div>
+                    } @else if (patientResults.length === 0) {
+                      <div class="px-4 py-3 text-sm text-muted-foreground">Sin resultados</div>
+                    } @else {
+                      <div class="max-h-64 overflow-y-auto">
+                        @for (p of patientResults; track p.id) {
+                          <button
+                            type="button"
+                            (click)="selectPatient(p)"
+                            class="w-full px-4 py-3 text-left hover:bg-muted transition"
+                          >
+                            <div class="text-sm font-semibold text-foreground">
+                              {{ p.first_names }} {{ p.last_names }}
+                            </div>
+                            <div class="text-xs text-muted-foreground">
+                              DNI: {{ p.dni }} · {{ p.phone || 'Sin teléfono' }}
+                            </div>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (selectedPatient) {
+                  <div class="mt-2 text-xs text-muted-foreground">
+                    Seleccionado:
+                    <span class="font-semibold text-foreground">
+                      {{ selectedPatient.first_names }} {{ selectedPatient.last_names }} · DNI {{ selectedPatient.dni }}
+                    </span>
+                  </div>
+                }
               </div>
 
               <div class="grid gap-5 sm:grid-cols-2">
