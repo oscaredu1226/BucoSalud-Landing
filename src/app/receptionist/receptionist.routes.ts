@@ -6,7 +6,6 @@ import {AppointmentsListComponent} from './presentation/pages/appointments/list/
 import {AgendaComponent} from './presentation/pages/agenda/agenda.component';
 import {PatientsListComponent} from './presentation/pages/patients/list/patients-list.component';
 import {AvailabilityComponent} from './presentation/pages/availability/availability.component';
-import {SettingsComponent} from './presentation/pages/settings/settings.component';
 
 export const RECEPTIONIST_ROUTES: Routes = [
 
@@ -27,7 +26,6 @@ export const RECEPTIONIST_ROUTES: Routes = [
 
 
       { path: 'availability', component: AvailabilityComponent },
-      { path: 'settings', component: SettingsComponent },
     ],
   },
 ];

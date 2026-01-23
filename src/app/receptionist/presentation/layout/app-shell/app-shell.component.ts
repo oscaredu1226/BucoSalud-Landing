@@ -21,7 +21,6 @@ export class AppShellComponent {
     { label: 'Citas', path: '/receptionist/appointments', icon: 'appointments' },
     { label: 'Pacientes', path: '/receptionist/patients', icon: 'patients' },
     { label: 'Disponibilidad', path: '/receptionist/availability', icon: 'availability' },
-    { label: 'Ajustes', path: '/receptionist/settings', icon: 'settings' },
   ];
 
   isMobileMenuOpen = false;

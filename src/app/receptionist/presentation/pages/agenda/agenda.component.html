@@ -10,23 +10,67 @@
         </p>
       </div>
 
-      <!-- VIEW TOGGLE -->
-      <div class="flex rounded-xl bg-muted p-1">
-        <button
-          class="px-4 py-2 text-sm font-semibold rounded-lg"
-          [ngClass]="viewMode === 'day' ? 'bg-background shadow text-foreground' : 'text-muted-foreground'"
-          (click)="setView('day')"
-        >
-          Día
-        </button>
-        <button
-          class="px-4 py-2 text-sm font-semibold rounded-lg"
-          [ngClass]="viewMode === 'week' ? 'bg-background shadow text-foreground' : 'text-muted-foreground'"
-          (click)="setView('week')"
-        >
-          Semana
-        </button>
+      <div class="flex items-center gap-3">
+        <!-- WEEK NAV -->
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="prevWeek()"
+            class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background hover:bg-muted transition"
+            aria-label="Semana anterior"
+          >
+            <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+          </button>
+
+          <div class="hidden sm:block px-3 text-sm font-semibold text-foreground">
+            {{ weekLabel }}
+          </div>
+
+          <button
+            type="button"
+            (click)="nextWeek()"
+            class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background hover:bg-muted transition"
+            aria-label="Semana siguiente"
+          >
+            <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            (click)="goToToday()"
+            class="h-11 rounded-2xl px-4 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+          >
+            Hoy
+          </button>
+        </div>
+
+        <!-- VIEW TOGGLE -->
+        <div class="flex rounded-xl bg-muted p-1">
+          <button
+            class="px-4 py-2 text-sm font-semibold rounded-lg"
+            [ngClass]="viewMode === 'day' ? 'bg-background shadow text-foreground' : 'text-muted-foreground'"
+            (click)="setView('day')"
+          >
+            Día
+          </button>
+          <button
+            class="px-4 py-2 text-sm font-semibold rounded-lg"
+            [ngClass]="viewMode === 'week' ? 'bg-background shadow text-foreground' : 'text-muted-foreground'"
+            (click)="setView('week')"
+          >
+            Semana
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- Week label mobile -->
+    <div class="mt-3 sm:hidden text-sm font-semibold text-foreground">
+      {{ weekLabel }}
     </div>
 
     <!-- ======================
@@ -112,15 +156,17 @@
          WEEK VIEW
          ====================== -->
     @if (viewMode === 'week') {
-      <div class="mt-6 grid grid-cols-7 gap-4">
+      <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
         @for (d of days; track d.date) {
-          <div
-            class="rounded-2xl border p-4"
+          <button
+            type="button"
+            (click)="selectDay(d.date)"
+            class="text-left rounded-2xl border p-4 transition hover:bg-muted/40"
             [ngClass]="selectedDate === d.date ? 'border-primary' : 'border-border'"
           >
             <div class="text-center mb-3">
               <p class="text-xs text-muted-foreground">{{ d.weekday }}</p>
-              <p class="text-lg font-semibold">{{ d.day }}</p>
+              <p class="text-lg font-semibold text-foreground">{{ d.day }}</p>
             </div>
 
             @if (!hasAppointmentsForDate(d.date)) {
@@ -136,7 +182,8 @@
                   [ngClass]="{
                     'bg-emerald-100 text-emerald-700': a.status === 'Confirmada',
                     'bg-amber-100 text-amber-700': a.status === 'Pendiente',
-                    'bg-rose-100 text-rose-700': a.status === 'Cancelada'
+                    'bg-rose-100 text-rose-700': a.status === 'Cancelada',
+                    'bg-slate-100 text-slate-700': a.status === 'Completada'
                   }"
                 >
                   <p class="font-semibold">{{ a.time }}</p>
@@ -144,7 +191,7 @@
                 </div>
               }
             }
-          </div>
+          </button>
         }
       </div>
     }
