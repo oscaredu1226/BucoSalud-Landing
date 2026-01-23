@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import {NgClass} from '@angular/common';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NgClass } from '@angular/common';
 
 type NavItem = {
   label: string;
   path: string;
-  icon: 'dashboard' | 'agenda' | 'appointments' | 'patients' | 'availability' | 'settings';
+  icon: 'dashboard' | 'agenda' | 'appointments' | 'patients' | 'availability';
 };
 
 @Component({
@@ -15,6 +15,8 @@ type NavItem = {
   templateUrl: './app-shell.component.html',
 })
 export class AppShellComponent {
+  constructor(private readonly router: Router) {}
+
   readonly nav: NavItem[] = [
     { label: 'Dashboard', path: '/receptionist/dashboard', icon: 'dashboard' },
     { label: 'Agenda', path: '/receptionist/agenda', icon: 'agenda' },
@@ -31,5 +33,10 @@ export class AppShellComponent {
 
   closeMobileMenu() {
     this.isMobileMenuOpen = false;
+  }
+
+  logout() {
+    this.closeMobileMenu();
+    this.router.navigate(['/login']);
   }
 }
