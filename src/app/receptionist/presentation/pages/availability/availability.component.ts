@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {ToastService} from '../../../../shared/toast/toast.service';
 
 type DayKey = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
 
@@ -29,6 +30,10 @@ type SlotSize = 15 | 30 | 45 | 60;
   templateUrl: './availability.component.html',
 })
 export class AvailabilityComponent {
+  constructor(private readonly toast: ToastService) {
+    this.syncHourOptions();
+  }
+
   // UI state (mock)
   isSaving = false;
 
@@ -36,7 +41,7 @@ export class AvailabilityComponent {
   slotSize: SlotSize = 30;
   slotOptions: SlotSize[] = [15, 30, 45, 60];
 
-  // Horarios por día (como tu imagen: 08:00 - 18:00, viernes 08:00 - 14:00, domingo/sábado off)
+  // Horarios por día
   days: DayAvailability[] = [
     { key: 'sun', label: 'Domingo', enabled: false, start: '08:00', end: '18:00' },
     { key: 'mon', label: 'Lunes', enabled: true, start: '08:00', end: '18:00' },
@@ -47,10 +52,10 @@ export class AvailabilityComponent {
     { key: 'sat', label: 'Sábado', enabled: false, start: '08:00', end: '14:00' },
   ];
 
-  // Opciones hora para selects (cada 30 min por defecto; se recalcula según slotSize)
-  hourOptions: string[] = this.buildTimeOptions(30);
+  // Opciones hora para selects
+  hourOptions: string[] = [];
 
-  // Bloqueos (tabla)
+  // Bloqueos
   blocks: BlockRow[] = [
     { id: '1', date: '2025-01-25', start: '13:00', end: '14:00', reason: 'Almuerzo con proveedor' },
   ];
@@ -62,22 +67,25 @@ export class AvailabilityComponent {
   blockDraftEnd = '14:00';
   blockDraftReason = '';
 
-  constructor() {
-    this.syncHourOptions();
-  }
+  // ✅ Modal confirmación eliminar bloqueo
+  isConfirmDeleteOpen = false;
+  pendingDelete: BlockRow | null = null;
+  confirmTitle = 'Eliminar bloqueo';
+  confirmMessage = '¿Seguro que deseas eliminar este bloqueo?';
 
   // =========================
   // Horario de atención
   // =========================
   toggleDay(d: DayAvailability) {
     d.enabled = !d.enabled;
+
+    // info: no molesta, pero si no quieres, lo quitas
+    this.toast.info('Horario', `${d.label}: ${d.enabled ? 'Activado' : 'Desactivado'}`);
   }
 
   onSlotSizeChange() {
     this.syncHourOptions();
-
-    // opcional: si quieres ajustar start/end a un valor válido cercano, lo dejamos simple:
-    // si no existe exactamente, no rompemos (porque es maqueta).
+    this.toast.info('Duración', `Intervalos configurados a ${this.slotSize} minutos`);
   }
 
   private syncHourOptions() {
@@ -107,7 +115,21 @@ export class AvailabilityComponent {
   }
 
   addBlock() {
-    if (!this.blockDraftDate || !this.blockDraftStart || !this.blockDraftEnd) return;
+    // badway: validación básica
+    if (!this.blockDraftDate) {
+      this.toast.error('Campos incompletos', 'Selecciona una fecha para el bloqueo');
+      return;
+    }
+    if (!this.blockDraftStart || !this.blockDraftEnd) {
+      this.toast.error('Campos incompletos', 'Selecciona hora de inicio y fin');
+      return;
+    }
+
+    // badway: rango inválido
+    if (this.toMinutes(this.blockDraftEnd) <= this.toMinutes(this.blockDraftStart)) {
+      this.toast.error('Horario inválido', 'La hora fin debe ser mayor que la hora inicio');
+      return;
+    }
 
     const newRow: BlockRow = {
       id: crypto?.randomUUID?.() ?? String(Date.now()),
@@ -119,19 +141,60 @@ export class AvailabilityComponent {
 
     this.blocks = [newRow, ...this.blocks];
     this.closeBlockModal();
+
+    // goodway
+    this.toast.success('Bloqueo agregado', `${this.formatDateESLong(newRow.date)} · ${newRow.start}–${newRow.end}`);
   }
 
+  // ✅ pedir confirmación
+  requestRemoveBlock(b: BlockRow) {
+    this.pendingDelete = b;
+    this.confirmTitle = 'Eliminar bloqueo';
+    this.confirmMessage = `¿Seguro que deseas eliminar el bloqueo del ${this.formatDateESLong(b.date)} (${b.start}–${b.end})?`;
+    this.isConfirmDeleteOpen = true;
+  }
+
+  closeConfirmDelete() {
+    this.isConfirmDeleteOpen = false;
+    this.pendingDelete = null;
+  }
+
+  confirmRemoveBlock() {
+    const b = this.pendingDelete;
+    if (!b) return;
+
+    this.blocks = this.blocks.filter((x) => x.id !== b.id);
+    this.closeConfirmDelete();
+
+    this.toast.success('Bloqueo eliminado', `${this.formatDateESLong(b.date)}`);
+  }
+
+  // (lo mantengo por compatibilidad si lo llamas en otro lado, pero ya no se usa desde el HTML)
   removeBlock(id: string) {
+    const found = this.blocks.find((b) => b.id === id);
     this.blocks = this.blocks.filter((b) => b.id !== id);
+
+    this.toast.success('Bloqueo eliminado', found ? `${this.formatDateESLong(found.date)}` : 'Se eliminó el bloqueo');
   }
 
   // =========================
   // Save (mock)
   // =========================
   async save() {
-    this.isSaving = true;
-    await new Promise((r) => setTimeout(r, 700));
-    this.isSaving = false;
+    try {
+      this.isSaving = true;
+
+      // mock delay
+      await new Promise((r) => setTimeout(r, 700));
+
+      // goodway
+      this.toast.success('Guardado', 'Disponibilidad actualizada correctamente');
+    } catch {
+      // badway
+      this.toast.error('Error', 'No se pudo guardar, intenta nuevamente');
+    } finally {
+      this.isSaving = false;
+    }
   }
 
   // =========================
@@ -141,7 +204,10 @@ export class AvailabilityComponent {
     if (!iso || iso.length < 10) return iso;
     const dt = new Date(iso + 'T00:00:00');
     const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const months = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
 
     const dayName = days[dt.getDay()];
     const day = dt.getDate();
@@ -163,5 +229,16 @@ export class AvailabilityComponent {
       }
     }
     return out;
+  }
+
+  private toMinutes(hhmm: string): number {
+    const [h, m] = hhmm.split(':').map(Number);
+    return (h * 60) + (m || 0);
+  }
+
+  // ✅ ESC cierra confirmación
+  @HostListener('document:keydown.escape')
+  onEsc() {
+    if (this.isConfirmDeleteOpen) this.closeConfirmDelete();
   }
 }

@@ -1,0 +1,58 @@
+<!-- ✅ posición: arriba derecha -->
+<div class="fixed top-5 right-5 z-[100] w-[360px] max-w-[calc(100vw-24px)] space-y-3 pointer-events-none">
+  @for (t of (toast.toasts$ | async) ?? []; track trackById($index, t)) {
+    <div
+      class="pointer-events-auto rounded-2xl border shadow-lg bg-card overflow-hidden"
+      [class]="pillClasses(t)"
+    >
+      <div class="p-4 flex gap-3 items-start">
+        <!-- icon -->
+        <div class="mt-0.5">
+          @if (iconPath(t) === 'success') {
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6 9 17l-5-5"></path>
+            </svg>
+          } @else if (iconPath(t) === 'error') {
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6 6 18"></path>
+              <path d="M6 6l12 12"></path>
+            </svg>
+          } @else if (iconPath(t) === 'warning') {
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.3 3.4 2.2 17.5A2 2 0 0 0 4 20h16a2 2 0 0 0 1.8-2.5L13.7 3.4a2 2 0 0 0-3.4 0Z"></path>
+              <path d="M12 9v4"></path>
+              <path d="M12 17h.01"></path>
+            </svg>
+          } @else {
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4"></path>
+              <path d="M12 8h.01"></path>
+            </svg>
+          }
+        </div>
+
+        <!-- text -->
+        <div class="flex-1">
+          <p class="font-semibold text-foreground">{{ t.title }}</p>
+          @if (t.message) {
+            <p class="mt-0.5 text-sm text-foreground/80">{{ t.message }}</p>
+          }
+        </div>
+
+        <!-- close -->
+        <button
+          type="button"
+          (click)="toast.dismiss(t.id)"
+          class="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-border bg-ºbackground/60 hover:bg-muted transition text-foreground"
+          aria-label="Cerrar toast"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18"></path>
+            <path d="M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  }
+</div>

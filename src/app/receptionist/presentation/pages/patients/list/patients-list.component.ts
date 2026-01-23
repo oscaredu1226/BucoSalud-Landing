@@ -1,6 +1,7 @@
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ToastService } from '../../../../../shared/toast/toast.service';
 
 type PatientStatus = 'active' | 'inactive';
 
@@ -21,6 +22,8 @@ type PatientRowVM = {
   templateUrl: './patients-list.component.html',
 })
 export class PatientsListComponent {
+  constructor(private readonly toast: ToastService) {}
+
   // search
   query = '';
 
@@ -31,6 +34,12 @@ export class PatientsListComponent {
   isCreateModalOpen = false;
   isDetailModalOpen = false;
   isEditModalOpen = false;
+
+  // ✅ Modal confirmación eliminar
+  isConfirmDeleteOpen = false;
+  confirmTitle = 'Eliminar paciente';
+  confirmMessage = '¿Seguro que deseas eliminar este paciente?';
+  pendingDelete: PatientRowVM | null = null;
 
   // seleccionado
   selected: PatientRowVM | null = null;
@@ -110,7 +119,6 @@ export class PatientsListComponent {
   formatLastVisit(iso?: string): string {
     if (!iso) return 'Sin citas';
 
-    // acepta 'YYYY-MM-DD' o ISO con hora
     const d = new Date(iso.length === 10 ? `${iso}T00:00:00` : iso);
     if (Number.isNaN(d.getTime())) return 'Sin citas';
 
@@ -133,7 +141,7 @@ export class PatientsListComponent {
   }
 
   // =========================
-  // Modals: Create
+  // Modales: Create
   // =========================
   openCreateModal() {
     this.closeRowMenu();
@@ -150,31 +158,55 @@ export class PatientsListComponent {
   }
 
   createPatient() {
-    if (!this.formFullName.trim() || !this.formDni.trim()) return;
+    const fullName = this.formFullName.trim();
+    const dni = this.formDni.trim();
+    const phone = this.formPhone.trim();
+    const email = this.formEmail.trim();
+
+    // ✅ BADWAY: validación
+    if (!fullName) {
+      this.toast.error('Campos incompletos', 'Ingresa el nombre completo');
+      return;
+    }
+    if (!dni) {
+      this.toast.error('Campos incompletos', 'Ingresa el DNI');
+      return;
+    }
+
+    // ✅ BADWAY: DNI duplicado
+    if (this.isDniTaken(dni)) {
+      this.toast.error('DNI duplicado', 'Ya existe un paciente con ese DNI');
+      return;
+    }
 
     const nextId = this.nextId();
 
     const newPatient: PatientRowVM = {
       id: nextId,
-      fullName: this.formFullName.trim(),
-      dni: this.formDni.trim(),
-      phone: this.formPhone.trim() || undefined,
-      email: this.formEmail.trim() || undefined,
+      fullName,
+      dni,
+      phone: phone || undefined,
+      email: email || undefined,
       status: 'active',
       lastVisit: undefined,
     };
 
     this.patients = [newPatient, ...this.patients];
     this.closeCreateModal();
+
+    // ✅ GOODWAY
+    this.toast.success('Paciente creado', `${newPatient.fullName} · DNI ${newPatient.dni}`);
   }
 
   // =========================
-  // Modals: Details
+  // Modales: Details
   // =========================
   openDetailModal(p: PatientRowVM) {
     this.closeRowMenu();
     this.selected = p;
     this.isDetailModalOpen = true;
+
+    this.toast.info('Detalles', `Abriendo ${p.id}`); // opcional
   }
 
   closeDetailModal() {
@@ -183,7 +215,7 @@ export class PatientsListComponent {
   }
 
   // =========================
-  // Modals: Edit
+  // Modales: Edit
   // =========================
   openEditModal(p: PatientRowVM) {
     this.closeRowMenu();
@@ -194,7 +226,10 @@ export class PatientsListComponent {
     this.editPhone = p.phone ?? '';
     this.editEmail = p.email ?? '';
 
+    // si estaba el modal de detalles, lo puedes dejar abierto o no; aquí lo dejamos tal cual.
     this.isEditModalOpen = true;
+
+    this.toast.info('Editar', `Editando ${p.id}`); // opcional
   }
 
   closeEditModal() {
@@ -203,34 +238,87 @@ export class PatientsListComponent {
   }
 
   saveEdit() {
-    if (!this.selected) return;
-    if (!this.editFullName.trim() || !this.editDni.trim()) return;
+    if (!this.selected) {
+      this.toast.error('Error', 'No se encontró el paciente a editar');
+      return;
+    }
+
+    const fullName = this.editFullName.trim();
+    const dni = this.editDni.trim();
+    const phone = this.editPhone.trim();
+    const email = this.editEmail.trim();
+
+    // ✅ BADWAY: validación
+    if (!fullName) {
+      this.toast.error('Campos incompletos', 'El nombre no puede estar vacío');
+      return;
+    }
+    if (!dni) {
+      this.toast.error('Campos incompletos', 'El DNI no puede estar vacío');
+      return;
+    }
+
+    // ✅ BADWAY: DNI duplicado (solo si cambió y pertenece a otro)
+    if (dni !== this.selected.dni && this.isDniTaken(dni, this.selected.id)) {
+      this.toast.error('DNI duplicado', 'Ese DNI ya está registrado en otro paciente');
+      return;
+    }
 
     const id = this.selected.id;
 
     const updated: PatientRowVM = {
       ...this.selected,
-      fullName: this.editFullName.trim(),
-      dni: this.editDni.trim(),
-      phone: this.editPhone.trim() || undefined,
-      email: this.editEmail.trim() || undefined,
+      fullName,
+      dni,
+      phone: phone || undefined,
+      email: email || undefined,
     };
 
     this.patients = this.patients.map((x) => (x.id === id ? updated : x));
+
+    // Si el modal de detalles estaba abierto con este mismo paciente, actualiza referencia
+    if (this.isDetailModalOpen && this.selected?.id === id) {
+      this.selected = updated;
+    }
+
     this.closeEditModal();
+
+    // ✅ GOODWAY
+    this.toast.success('Paciente actualizado', `${updated.fullName} · DNI ${updated.dni}`);
   }
 
   // =========================
-  // Delete
+  // ✅ Confirmación eliminar
   // =========================
-  deleteRow(p: PatientRowVM) {
+  requestDelete(p: PatientRowVM) {
     this.closeRowMenu();
+
+    this.pendingDelete = p;
+    this.confirmTitle = 'Eliminar paciente';
+    this.confirmMessage = `¿Seguro que deseas eliminar a ${p.fullName}?`;
+    this.isConfirmDeleteOpen = true;
+  }
+
+  closeConfirmDelete() {
+    this.isConfirmDeleteOpen = false;
+    this.pendingDelete = null;
+  }
+
+  confirmDelete() {
+    const p = this.pendingDelete;
+    if (!p) return;
+
     this.patients = this.patients.filter((x) => x.id !== p.id);
 
     if (this.selected?.id === p.id) {
       this.closeDetailModal();
       this.closeEditModal();
     }
+
+    this.closeConfirmDelete();
+
+    // ✅ GOODWAY
+    this.toast.success('Paciente eliminado', `${p.fullName}`);
   }
 
   // =========================
@@ -247,6 +335,12 @@ export class PatientsListComponent {
     this.closeRowMenu();
   }
 
+  // ✅ ESC para cerrar confirm
+  @HostListener('document:keydown.escape')
+  onEsc() {
+    if (this.isConfirmDeleteOpen) this.closeConfirmDelete();
+  }
+
   // =========================
   // utils
   // =========================
@@ -257,5 +351,15 @@ export class PatientsListComponent {
       if (!Number.isNaN(n)) max = Math.max(max, n);
     }
     return `PAT-${max + 1}`;
+  }
+
+  private isDniTaken(dni: string, ignoreId?: string): boolean {
+    const needle = dni.trim();
+    if (!needle) return false;
+
+    return this.patients.some((p) => {
+      if (ignoreId && p.id === ignoreId) return false;
+      return p.dni.trim() === needle;
+    });
   }
 }

@@ -2,6 +2,7 @@ import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ToastService } from '../../../../../shared/toast/toast.service';
 
 type AppointmentStatus = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada';
 
@@ -32,7 +33,10 @@ type CalendarCell = {
   templateUrl: './appointments-list.component.html',
 })
 export class AppointmentsListComponent {
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly toast: ToastService,
+  ) {}
 
   isLoading = false;
   hasError = false;
@@ -62,6 +66,14 @@ export class AppointmentsListComponent {
   // =========================
   isDetailModalOpen = false;
   detailRow: AppointmentRow | null = null;
+
+  // =========================
+  // ✅ Modal Confirmación Cancelar
+  // =========================
+  isConfirmDeleteOpen = false;
+  confirmTitle = 'Cancelar cita';
+  confirmMessage = '¿Seguro que deseas cancelar esta cita?';
+  pendingDeleteRow: AppointmentRow | null = null;
 
   // form modal (mock)
   formPatientQuery = '';
@@ -163,6 +175,7 @@ export class AppointmentsListComponent {
   clearDateFilter() {
     this.dateFilter = '';
     this.rebuildCalendar();
+    this.toast.info('Filtro limpiado', 'Ahora estás viendo todas las fechas'); // ✅ info
   }
 
   get monthLabel(): string {
@@ -187,6 +200,7 @@ export class AppointmentsListComponent {
   pickDate(cell: CalendarCell) {
     this.dateFilter = cell.iso;
     this.closeDatePicker();
+    this.toast.info('Filtro aplicado', `Fecha: ${this.formatDateES(cell.iso)}`); // ✅ info
   }
 
   private rebuildCalendar() {
@@ -248,9 +262,36 @@ export class AppointmentsListComponent {
     this.router.navigate(['/receptionist/appointments', row.id, 'reschedule']);
   }
 
-  deleteRow(row: AppointmentRow) {
+  // =========================
+  // ✅ Confirmación antes de cancelar
+  // =========================
+  requestDelete(row: AppointmentRow) {
     this.closeRowMenu();
+    this.isDatePickerOpen = false;
+
+    this.pendingDeleteRow = row;
+    this.confirmTitle = 'Cancelar cita';
+    this.confirmMessage = `¿Seguro que deseas cancelar la cita ${row.id}? Esta acción la quitará de la lista.`;
+    this.isConfirmDeleteOpen = true;
+  }
+
+  closeConfirmDelete() {
+    this.isConfirmDeleteOpen = false;
+    this.pendingDeleteRow = null;
+  }
+
+  confirmDelete() {
+    const row = this.pendingDeleteRow;
+    if (!row) return;
+
     this.rows = this.rows.filter((r) => r.id !== row.id);
+    this.toast.success('Cita cancelada', `Se canceló ${row.id}`); // ✅ goodway
+
+    // si estaba abierta en detalles, ciérralo
+    if (this.detailRow?.id === row.id) this.closeDetailModal();
+    if (this.rescheduleRow?.id === row.id) this.closeRescheduleModal();
+
+    this.closeConfirmDelete();
   }
 
   // =========================
@@ -262,6 +303,8 @@ export class AppointmentsListComponent {
 
     this.detailRow = row;
     this.isDetailModalOpen = true;
+
+    this.toast.info('Detalles', `Abriendo ${row.id}`); // ✅ opcional
   }
 
   closeDetailModal() {
@@ -289,8 +332,15 @@ export class AppointmentsListComponent {
   }
 
   saveReschedule() {
-    if (!this.rescheduleRow) return;
-    if (!this.rescheduleDate || !this.rescheduleTime) return;
+    if (!this.rescheduleRow) {
+      this.toast.error('Error', 'No se encontró la cita a reprogramar');
+      return;
+    }
+
+    if (!this.rescheduleDate || !this.rescheduleTime) {
+      this.toast.error('Campos incompletos', 'Selecciona fecha y hora');
+      return;
+    }
 
     const id = this.rescheduleRow.id;
 
@@ -298,12 +348,13 @@ export class AppointmentsListComponent {
       r.id === id ? { ...r, date: this.rescheduleDate, time: this.rescheduleTime } : r
     );
 
-    // opcional: si el modal de detalles estaba abierto para esa misma cita, actualízalo también
+    // si el modal de detalles estaba abierto para esa misma cita, actualízalo también
     if (this.detailRow?.id === id) {
       this.detailRow = { ...this.detailRow, date: this.rescheduleDate, time: this.rescheduleTime };
     }
 
     this.closeRescheduleModal();
+    this.toast.success('Cita reprogramada', `${id} → ${this.formatDateES(this.rescheduleDate)} ${this.rescheduleTime}`);
   }
 
   // =========================
@@ -325,7 +376,19 @@ export class AppointmentsListComponent {
   }
 
   createAppointment() {
-    if (!this.formPatientQuery.trim() || !this.formDate || !this.formHour) return;
+    // ✅ validaciones -> BADWAY
+    if (!this.formPatientQuery.trim()) {
+      this.toast.error('Campos incompletos', 'Ingresa el nombre o DNI del paciente');
+      return;
+    }
+    if (!this.formDate) {
+      this.toast.error('Campos incompletos', 'Selecciona una fecha');
+      return;
+    }
+    if (!this.formHour) {
+      this.toast.error('Campos incompletos', 'Selecciona una hora');
+      return;
+    }
 
     const nextId = this.nextId();
 
@@ -343,6 +406,9 @@ export class AppointmentsListComponent {
 
     this.rows = [newRow, ...this.rows];
     this.closeCreateModal();
+
+    // ✅ goodway
+    this.toast.success('Cita creada', `${newRow.patientName} · ${this.formatDateES(newRow.date)} ${newRow.time}`);
   }
 
   resetFilters() {
@@ -352,6 +418,8 @@ export class AppointmentsListComponent {
     this.rebuildCalendar();
     this.closeDatePicker();
     this.closeRowMenu();
+
+    this.toast.info('Filtros reseteados', 'Mostrando citas de hoy');
   }
 
   // =========================
@@ -367,6 +435,12 @@ export class AppointmentsListComponent {
 
     this.closeRowMenu();
     this.closeDatePicker();
+  }
+
+  // ✅ ESC para cerrar confirm
+  @HostListener('document:keydown.escape')
+  onEsc() {
+    if (this.isConfirmDeleteOpen) this.closeConfirmDelete();
   }
 
   // =========================
