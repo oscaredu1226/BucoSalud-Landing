@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
+import { AppointmentHttpRepository, AppointmentRow } from '../../../infrastructure/http/repositories/appointment.http-repository';
 
 type AppointmentStatus = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada';
 
@@ -26,7 +28,12 @@ type DayItem = {
   imports: [CommonModule],
   templateUrl: './agenda.component.html',
 })
-export class AgendaComponent {
+export class AgendaComponent implements OnInit {
+  constructor(
+    private readonly apptRepo: AppointmentHttpRepository,
+    private readonly cdr: ChangeDetectorRef
+  ) {}
+
   isLoading = false;
   hasError = false;
 
@@ -38,28 +45,43 @@ export class AgendaComponent {
 
   timeSlots: string[] = this.buildTimeSlots(8, 18);
 
-  appointments: AgendaAppointment[] = [
-    {
-      id: 'APT-1',
-      patientName: 'María García',
-      phone: '987654321',
-      dni: '12345678',
-      date: '2026-01-21',
-      time: '09:00',
-      reason: 'Evaluación',
-      status: 'Confirmada',
-    },
-    {
-      id: 'APT-2',
-      patientName: 'Juan Pérez',
-      phone: '87654321',
-      dni: '87654321',
-      date: '2026-01-21',
-      time: '10:30',
-      reason: 'Control',
-      status: 'Pendiente',
-    },
-  ];
+  // ✅ ahora viene de supabase
+  appointments: AgendaAppointment[] = [];
+
+  /* ======================
+     INIT
+     ====================== */
+
+  async ngOnInit() {
+    await this.loadWeekAppointments();
+  }
+
+  private async loadWeekAppointments() {
+    this.isLoading = true;
+    this.hasError = false;
+    this.cdr.detectChanges();
+
+    // rango: [weekStart, weekStart+7)
+    const fromIso = `${this.weekStartISO}T00:00:00.000Z`;
+    const end = new Date(fromIso);
+    end.setUTCDate(end.getUTCDate() + 7);
+    const toIso = end.toISOString();
+
+    const { data, error } = await this.apptRepo.listByDateRange(fromIso, toIso, 5000);
+
+    this.isLoading = false;
+
+    if (error) {
+      this.hasError = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const rows = (data ?? []) as AppointmentRow[];
+
+    this.appointments = rows.map((r: any) => this.toAgendaVM(r));
+    this.cdr.detectChanges();
+  }
 
   /* ======================
      GETTERS
@@ -122,7 +144,7 @@ export class AgendaComponent {
      ACTIONS
      ====================== */
 
-  selectDay(date: string) {
+  async selectDay(date: string) {
     this.selectedDate = date;
 
     // ✅ si seleccionan un día fuera de la semana actual, saltamos a esa semana
@@ -130,6 +152,7 @@ export class AgendaComponent {
     if (w !== this.weekStartISO) {
       this.weekStartISO = w;
       this.days = this.buildWeekFromWeekStart(this.weekStartISO);
+      await this.loadWeekAppointments();
     }
   }
 
@@ -138,43 +161,116 @@ export class AgendaComponent {
   }
 
   // ✅ navegación de semanas
-  prevWeek() {
+  async prevWeek() {
     const d = new Date(this.weekStartISO + 'T00:00:00');
     d.setDate(d.getDate() - 7);
-    this.setWeek(this.toISODate(d));
+    await this.setWeek(this.toISODate(d));
   }
 
-  nextWeek() {
+  async nextWeek() {
     const d = new Date(this.weekStartISO + 'T00:00:00');
     d.setDate(d.getDate() + 7);
-    this.setWeek(this.toISODate(d));
+    await this.setWeek(this.toISODate(d));
   }
 
-  goToToday() {
+  async goToToday() {
     const today = this.todayISO();
-    this.setWeek(this.startOfWeekISO(today));
+    await this.setWeek(this.startOfWeekISO(today));
     this.selectedDate = today;
   }
 
-  private setWeek(weekStartISO: string) {
+  private async setWeek(weekStartISO: string) {
     this.weekStartISO = weekStartISO;
     this.days = this.buildWeekFromWeekStart(this.weekStartISO);
 
     // ✅ si el selectedDate queda fuera, lo seteamos al primer día de la semana
     const inWeek = this.days.some(x => x.date === this.selectedDate);
     if (!inWeek) this.selectedDate = this.days[0]?.date ?? this.weekStartISO;
+
+    await this.loadWeekAppointments();
   }
 
-  confirm(a: AgendaAppointment) {
+  // ✅ opcional: actualizar estado en DB (si quieres que sea real)
+  async confirm(a: AgendaAppointment) {
     a.status = 'Confirmada';
+    await this.persistStatus(a.id, 'confirmed');
   }
 
-  cancel(a: AgendaAppointment) {
+  async cancel(a: AgendaAppointment) {
     a.status = 'Cancelada';
+    await this.persistStatus(a.id, 'cancelled');
   }
 
-  complete(a: AgendaAppointment) {
+  async complete(a: AgendaAppointment) {
     a.status = 'Completada';
+    await this.persistStatus(a.id, 'completed');
+  }
+
+  private async persistStatus(id: string, dbStatus: string) {
+    // no rompe tu UI: si falla, solo revierte recargando semana
+    const { error } = await this.apptRepo.update(id, { status: dbStatus });
+    if (error) {
+      this.hasError = true;
+      await this.loadWeekAppointments();
+    }
+  }
+
+  /* ======================
+     MAPPING (DB -> UI)
+     ====================== */
+
+  private toAgendaVM(r: any): AgendaAppointment {
+    const p = r.patient ?? null;
+
+    const fullName = p
+      ? `${p.first_names ?? ''} ${p.last_names ?? ''}`.trim()
+      : '(Sin paciente)';
+
+    const { date, time } = this.splitDateTimeLocal(r.start_at);
+
+    return {
+      id: r.id,
+      patientName: fullName || '(Sin paciente)',
+      phone: p?.phone ?? '—',
+      dni: p?.dni ? String(p.dni) : '—',
+      date,
+      time,
+      reason: r.reason ?? '—',
+      status: this.mapDbStatusToUi(r.status),
+    };
+  }
+
+  private mapDbStatusToUi(s: any): AppointmentStatus {
+    const v = String(s ?? '').toLowerCase();
+
+    // tu enum real en DB: pending, confirmed, cancelled (y opcional completed)
+    if (v === 'pending') return 'Pendiente';
+    if (v === 'confirmed') return 'Confirmada';
+    if (v === 'cancelled') return 'Cancelada';
+    if (v === 'completed') return 'Completada';
+
+    // fallback por si ya viene en español
+    if (v === 'pendiente') return 'Pendiente';
+    if (v === 'confirmada') return 'Confirmada';
+    if (v === 'cancelada') return 'Cancelada';
+    if (v === 'completada') return 'Completada';
+
+    // default seguro
+    return 'Confirmada';
+  }
+
+  private splitDateTimeLocal(iso: string): { date: string; time: string } {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return { date: this.todayISO(), time: '00:00' };
+
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+
+    return { date: `${y}-${m}-${day}`, time: `${hh}:${mm}` };
   }
 
   /* ======================
