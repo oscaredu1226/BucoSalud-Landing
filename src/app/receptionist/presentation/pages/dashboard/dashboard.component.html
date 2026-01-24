@@ -7,10 +7,9 @@
           Dashboard
         </h1>
         <p class="text-muted-foreground mt-1">
-          Jueves, 22 de Enero
+          {{ todayLabel }}
         </p>
       </div>
-
     </div>
 
     <!-- KPI Cards -->
@@ -20,7 +19,7 @@
           class="rounded-2xl border border-border shadow-sm p-6 bg-card"
           [ngClass]="{
             'bg-primary/5 border-primary/25': kpi.label === 'Citas hoy',
-            'bg-amber-500/10 border-amber-500/30': kpi.label === 'Pendientes',
+            'bg-sky-500/10 border-sky-500/30': kpi.label === 'Próxima cita',
             'bg-muted border-border': kpi.label === 'Pacientes',
             'bg-emerald-500/10 border-emerald-500/25': kpi.label === 'Disponibilidad'
           }"
@@ -45,7 +44,7 @@
               class="h-12 w-12 rounded-2xl flex items-center justify-center"
               [ngClass]="{
                 'bg-primary/10': kpi.label === 'Citas hoy',
-                'bg-amber-500/15': kpi.label === 'Pendientes',
+                'bg-sky-500/15': kpi.label === 'Próxima cita',
                 'bg-muted': kpi.label === 'Pacientes',
                 'bg-emerald-500/15': kpi.label === 'Disponibilidad'
               }"
@@ -58,12 +57,11 @@
                   <path d="M3 10h18"></path>
                   <path d="M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
                 </svg>
-              } @else if (kpi.label === 'Pendientes') {
-                <!-- alert-circle -->
-                <svg class="h-6 w-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              } @else if (kpi.label === 'Próxima cita') {
+                <!-- clock -->
+                <svg class="h-6 w-6 text-sky-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M12 8v4"></path>
-                  <path d="M12 16h.01"></path>
+                  <path d="M12 6v6l4 2"></path>
                 </svg>
               } @else if (kpi.label === 'Pacientes') {
                 <!-- users -->
@@ -137,7 +135,8 @@
                     [ngClass]="{
                       'bg-emerald-500/15 text-emerald-700 border-emerald-500/30': row.status === 'Confirmada',
                       'bg-amber-500/15 text-amber-700 border-amber-500/30': row.status === 'Pendiente',
-                      'bg-destructive/15 text-destructive border-destructive/30': row.status === 'Cancelada'
+                      'bg-destructive/15 text-destructive border-destructive/30': row.status === 'Cancelada',
+                      'bg-slate-500/10 text-slate-700 border-slate-500/20': row.status === 'Completada'
                     }"
                   >
                     @if (row.status === 'Confirmada') {
