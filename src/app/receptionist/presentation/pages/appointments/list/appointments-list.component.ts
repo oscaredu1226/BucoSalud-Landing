@@ -5,14 +5,18 @@ import { Router } from '@angular/router';
 import { ToastService } from '../../../../../shared/toast/toast.service';
 
 import { PatientHttpRepository, PatientRow } from '../../../../infrastructure/http/repositories/patient.http-repository';
-import { AppointmentHttpRepository } from '../../../../infrastructure/http/repositories/appointment.http-repository';
+import {
+  AppointmentHttpRepository,
+  BlockedSlotRow,
+  AvailabilitySettingsRow,
+} from '../../../../infrastructure/http/repositories/appointment.http-repository';
 
 type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled';
 
-type AppointmentRow = {
+type AppointmentVM = {
   id: string;
 
-  patientId: string; // ✅ nuevo (para update/delete)
+  patientId: string;
   patientName: string;
   dni: string;
   phone: string;
@@ -28,12 +32,15 @@ type AppointmentRow = {
 };
 
 type CalendarCell = {
-  iso: string;          // YYYY-MM-DD
-  day: number;          // 1..31
+  iso: string;
+  day: number;
   inMonth: boolean;
   isToday: boolean;
   isSelected: boolean;
 };
+
+type WorkingHourDay = { start: string; end: string; enabled: boolean };
+type WorkingHours = Record<'mon'|'tue'|'wed'|'thu'|'fri'|'sat'|'sun', WorkingHourDay>;
 
 @Component({
   selector: 'app-appointments-list',
@@ -56,7 +63,7 @@ export class AppointmentsListComponent implements OnInit {
   // filtros
   q = '';
   status: 'all' | AppointmentStatus = 'all';
-  dateFilter: string = this.todayISO(); // ✅ arranca HOY
+  dateFilter: string = this.todayISO();
   isDatePickerOpen = false;
 
   // dropdown por fila (acciones)
@@ -65,61 +72,72 @@ export class AppointmentsListComponent implements OnInit {
   // modal nueva cita
   isCreateModalOpen = false;
 
-  // =========================
-  // ✅ Modal Reprogramar Cita
-  // =========================
+  // modal reprogramar
   isRescheduleModalOpen = false;
-  rescheduleRow: AppointmentRow | null = null;
+  rescheduleRow: AppointmentVM | null = null;
   rescheduleDate: string = this.todayISO();
   rescheduleTime: string = '';
 
-  // =========================
-  // ✅ Modal Detalles Cita
-  // =========================
+  // modal detalles
   isDetailModalOpen = false;
-  detailRow: AppointmentRow | null = null;
+  detailRow: AppointmentVM | null = null;
 
-  // =========================
-  // ✅ Modal Confirmación Cancelar
-  // =========================
+  // confirm cancelar
   isConfirmDeleteOpen = false;
   confirmTitle = 'Cancelar cita';
   confirmMessage = '¿Seguro que deseas cancelar esta cita?';
-  pendingDeleteRow: AppointmentRow | null = null;
+  pendingDeleteRow: AppointmentVM | null = null;
 
   // form modal
   formPatientQuery = '';
   formDate: string = this.todayISO();
   formHour: string = '';
   formNotes = '';
+
+  // base hours (fallback si no hay settings)
   readonly hours: string[] = this.buildHours(10, 18);
 
-  // =========================
-  // ✅ Autocomplete paciente (NUEVO)
-  // =========================
+  // opciones filtradas
+  createHourOptions: string[] = [];
+  rescheduleHourOptions: string[] = [];
+
+  // bloqueos cacheados por día
+  private blocksByDate = new Map<string, BlockedSlotRow[]>();
+
+  // disponibilidad cache (availability_settings)
+  private availability: AvailabilitySettingsRow | null = null;
+  private workingHours: WorkingHours | null = null;
+  private slotMinutes = 30;
+
+  // autocomplete paciente
   selectedPatient: PatientRow | null = null;
   patientResults: PatientRow[] = [];
   isPatientDropdownOpen = false;
   isPatientSearching = false;
   private patientSearchTimer: any = null;
 
-  // ✅ CALENDARIO CUSTOM (para filtro)
-  viewMonth = this.startOfMonthISO(this.todayISO()); // YYYY-MM-01
+  // calendario filtro
+  viewMonth = this.startOfMonthISO(this.todayISO());
   calendarWeeks: CalendarCell[][] = [];
   readonly weekLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  // ✅ ahora viene desde supabase
-  rows: AppointmentRow[] = [];
+  // citas
+  rows: AppointmentVM[] = [];
 
   // =========================
   // INIT
   // =========================
   async ngOnInit() {
     this.rebuildCalendar();
+
+    await this.ensureAvailabilityLoaded();
     await this.loadAppointments();
+
+    await this.refreshCreateHourOptions(this.formDate);
   }
 
-  private async loadAppointments() {
+  // 👇 IMPORTANTE: no private (por si en HTML llamas reintentar)
+  async loadAppointments() {
     this.isLoading = true;
     this.hasError = false;
     this.cdr.detectChanges();
@@ -128,8 +146,9 @@ export class AppointmentsListComponent implements OnInit {
     let toIso = '';
 
     if (this.dateFilter) {
+      // ojo: esto filtra por start_at en UTC; está OK para lista
       fromIso = `${this.dateFilter}T00:00:00.000Z`;
-      const next = new Date(`${this.dateFilter}T00:00:00.000Z`);
+      const next = new Date(fromIso);
       next.setUTCDate(next.getUTCDate() + 1);
       toIso = next.toISOString();
     }
@@ -154,9 +173,9 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // Computed / Helpers
+  // Computed
   // =========================
-  get filteredRows(): AppointmentRow[] {
+  get filteredRows(): AppointmentVM[] {
     const q = this.q.trim().toLowerCase();
 
     return this.rows
@@ -174,7 +193,7 @@ export class AppointmentsListComponent implements OnInit {
       });
   }
 
-  trackById = (_: number, row: AppointmentRow) => row.id;
+  trackById = (_: number, row: AppointmentVM) => row.id;
 
   formatDateES(iso: string): string {
     if (!iso || iso.length < 10) return iso;
@@ -185,7 +204,43 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // ✅ Autocomplete paciente (MÉTODOS)
+  // DISPONIBILIDAD (availability_settings)
+  // =========================
+  private async ensureAvailabilityLoaded() {
+    if (this.availability) return;
+
+    const { data, error } = await this.apptRepo.getAvailabilitySettings();
+    if (error) {
+      this.toast.error('Error', error.message ?? 'No se pudo cargar disponibilidad');
+      this.availability = null;
+      this.workingHours = null;
+      this.slotMinutes = 30;
+      return;
+    }
+
+    this.availability = data ?? null;
+
+    const wh = (data?.working_hours ?? null) as WorkingHours | null;
+    this.workingHours = wh;
+    this.slotMinutes = Number(data?.slot_minutes ?? 30);
+  }
+
+  private dowKeyFromDate(dateIso: string): keyof WorkingHours {
+    // 0=Sun ... 6=Sat
+    const d = new Date(dateIso + 'T00:00:00');
+    const dow = d.getDay();
+    const map: (keyof WorkingHours)[] = ['sun','mon','tue','wed','thu','fri','sat'];
+    return map[dow];
+  }
+
+  private isDayEnabled(dateIso: string): boolean {
+    if (!this.workingHours) return true; // fallback: permitir si no hay settings
+    const key = this.dowKeyFromDate(dateIso);
+    return !!this.workingHours[key]?.enabled;
+  }
+
+  // =========================
+  // ✅ Autocomplete paciente
   // =========================
   private patientLabel(p: PatientRow): string {
     const fullName = `${p.first_names ?? ''} ${p.last_names ?? ''}`.trim();
@@ -194,14 +249,12 @@ export class AppointmentsListComponent implements OnInit {
 
   onPatientFocus() {
     this.isPatientDropdownOpen = true;
-    // si ya hay texto, dispara búsqueda
     this.onPatientInputChange();
   }
 
   onPatientInputChange() {
     const q = this.formPatientQuery.trim();
 
-    // si el usuario escribe, invalidamos el seleccionado
     this.selectedPatient = null;
     this.isPatientDropdownOpen = true;
 
@@ -243,7 +296,7 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // ✅ Date picker (custom)
+  // Date picker
   // =========================
   toggleDatePicker() {
     this.isDatePickerOpen = !this.isDatePickerOpen;
@@ -342,21 +395,10 @@ export class AppointmentsListComponent implements OnInit {
     this.openRowMenuId = null;
   }
 
-  // rutas
-  goToDetail(row: AppointmentRow) {
-    this.closeRowMenu();
-    this.router.navigate(['/receptionist/appointments', row.id]);
-  }
-
-  goToReschedule(row: AppointmentRow) {
-    this.closeRowMenu();
-    this.router.navigate(['/receptionist/appointments', row.id, 'reschedule']);
-  }
-
   // =========================
-  // ✅ Confirmación antes de cancelar
+  // Cancelación
   // =========================
-  requestDelete(row: AppointmentRow) {
+  requestDelete(row: AppointmentVM) {
     this.closeRowMenu();
     this.isDatePickerOpen = false;
 
@@ -399,9 +441,9 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // ✅ Modal Detalles
+  // Detalles
   // =========================
-  openDetailModal(row: AppointmentRow) {
+  openDetailModal(row: AppointmentVM) {
     this.closeRowMenu();
     this.isDatePickerOpen = false;
 
@@ -416,9 +458,9 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // ✅ Modal Reprogramar
+  // Reprogramar
   // =========================
-  openRescheduleModal(row: AppointmentRow) {
+  async openRescheduleModal(row: AppointmentVM) {
     this.closeRowMenu();
     this.isDatePickerOpen = false;
 
@@ -426,12 +468,29 @@ export class AppointmentsListComponent implements OnInit {
     this.rescheduleDate = row.date;
     this.rescheduleTime = row.time || this.hours[0] || '10:00';
 
+    await this.refreshRescheduleHourOptions(this.rescheduleDate);
+
+    if (this.rescheduleTime && !this.rescheduleHourOptions.includes(this.rescheduleTime)) {
+      this.rescheduleTime = this.rescheduleHourOptions[0] || '';
+    }
+
     this.isRescheduleModalOpen = true;
+    this.cdr.detectChanges();
   }
 
   closeRescheduleModal() {
     this.isRescheduleModalOpen = false;
     this.rescheduleRow = null;
+  }
+
+  async onRescheduleDateChange() {
+    await this.refreshRescheduleHourOptions(this.rescheduleDate);
+
+    if (this.rescheduleTime && !this.rescheduleHourOptions.includes(this.rescheduleTime)) {
+      this.rescheduleTime = this.rescheduleHourOptions[0] || '';
+    }
+
+    this.cdr.detectChanges();
   }
 
   async saveReschedule() {
@@ -445,16 +504,26 @@ export class AppointmentsListComponent implements OnInit {
       return;
     }
 
+    await this.ensureAvailabilityLoaded();
+
+    if (!this.isDayEnabled(this.rescheduleDate)) {
+      this.toast.error('Día no disponible', 'Ese día está deshabilitado en disponibilidad');
+      return;
+    }
+
     const id = this.rescheduleRow.id;
-    const duration = this.rescheduleRow._durationMin ?? 30;
+    const duration = this.rescheduleRow._durationMin ?? this.slotMinutes ?? 30;
 
     const startAtIso = this.combineDateTimeISO(this.rescheduleDate, this.rescheduleTime);
     const endAtIso = this.addMinutesISO(startAtIso, duration);
 
+    const blockedOrBusy = await this.isRangeBlockedOrBusy(this.rescheduleDate, startAtIso, endAtIso, id);
+    if (blockedOrBusy) return;
+
     this.isLoading = true;
     this.cdr.detectChanges();
 
-    const { data, error } = await this.apptRepo.update(id, {
+    const { error } = await this.apptRepo.update(id, {
       start_at: startAtIso,
       end_at: endAtIso,
     });
@@ -481,14 +550,13 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // Modal Nueva Cita
+  // Nueva cita
   // =========================
-  openCreateModal() {
+  async openCreateModal() {
     this.isCreateModalOpen = true;
     this.openRowMenuId = null;
     this.isDatePickerOpen = false;
 
-    // ✅ reset autocomplete
     this.formPatientQuery = '';
     this.selectedPatient = null;
     this.patientResults = [];
@@ -496,8 +564,12 @@ export class AppointmentsListComponent implements OnInit {
     this.isPatientSearching = false;
 
     this.formDate = this.todayISO();
-    this.formHour = '';
     this.formNotes = '';
+
+    await this.ensureAvailabilityLoaded();
+    await this.refreshCreateHourOptions(this.formDate);
+
+    this.formHour = this.createHourOptions[0] || '';
     this.cdr.detectChanges();
   }
 
@@ -507,8 +579,17 @@ export class AppointmentsListComponent implements OnInit {
     this.patientResults = [];
   }
 
+  async onCreateDateChange() {
+    await this.refreshCreateHourOptions(this.formDate);
+
+    if (this.formHour && !this.createHourOptions.includes(this.formHour)) {
+      this.formHour = this.createHourOptions[0] || '';
+    }
+
+    this.cdr.detectChanges();
+  }
+
   async createAppointment() {
-    // ✅ ahora exige paciente seleccionado
     if (!this.selectedPatient) {
       this.toast.error('Paciente', 'Selecciona un paciente de la lista');
       return;
@@ -522,10 +603,20 @@ export class AppointmentsListComponent implements OnInit {
       return;
     }
 
+    await this.ensureAvailabilityLoaded();
+
+    if (!this.isDayEnabled(this.formDate)) {
+      this.toast.error('Día no disponible', 'Ese día está deshabilitado en disponibilidad');
+      return;
+    }
+
     const patient = this.selectedPatient;
 
     const startAtIso = this.combineDateTimeISO(this.formDate, this.formHour);
-    const endAtIso = this.addMinutesISO(startAtIso, 30);
+    const endAtIso = this.addMinutesISO(startAtIso, this.slotMinutes ?? 30);
+
+    const blockedOrBusy = await this.isRangeBlockedOrBusy(this.formDate, startAtIso, endAtIso, null);
+    if (blockedOrBusy) return;
 
     this.isLoading = true;
     this.cdr.detectChanges();
@@ -552,7 +643,7 @@ export class AppointmentsListComponent implements OnInit {
       return;
     }
 
-    const vm: AppointmentRow = this.toVM({
+    const vm: AppointmentVM = this.toVM({
       ...data,
       patient: {
         id: patient.id,
@@ -583,6 +674,182 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
+  // ✅ HORAS DISPONIBLES (incluye validación de día habilitado)
+  // =========================
+  private async refreshCreateHourOptions(dateIso: string) {
+    await this.ensureAvailabilityLoaded();
+
+    if (!dateIso) {
+      this.createHourOptions = [...this.hours];
+      return;
+    }
+
+    // 🔥 si el día está deshabilitado: 0 horas
+    if (!this.isDayEnabled(dateIso)) {
+      this.createHourOptions = [];
+      return;
+    }
+
+    await this.ensureBlocksLoaded(dateIso);
+
+    const duration = this.slotMinutes ?? 30;
+
+    this.createHourOptions = this.hours.filter((hhmm) => {
+      const startIso = this.combineDateTimeISO(dateIso, hhmm);
+      const endIso = this.addMinutesISO(startIso, duration);
+      return this.isFreeLocal(dateIso, startIso, endIso, null);
+    });
+
+    this.cdr.detectChanges();
+  }
+
+  private async refreshRescheduleHourOptions(dateIso: string) {
+    await this.ensureAvailabilityLoaded();
+
+    if (!dateIso) {
+      this.rescheduleHourOptions = [...this.hours];
+      return;
+    }
+
+    if (!this.isDayEnabled(dateIso)) {
+      this.rescheduleHourOptions = [];
+      return;
+    }
+
+    await this.ensureBlocksLoaded(dateIso);
+
+    const duration = this.rescheduleRow?._durationMin ?? this.slotMinutes ?? 30;
+    const ignoreId = this.rescheduleRow?.id ?? null;
+
+    this.rescheduleHourOptions = this.hours.filter((hhmm) => {
+      const startIso = this.combineDateTimeISO(dateIso, hhmm);
+      const endIso = this.addMinutesISO(startIso, duration);
+      return this.isFreeLocal(dateIso, startIso, endIso, ignoreId);
+    });
+
+    this.cdr.detectChanges();
+  }
+
+  private async ensureBlocksLoaded(dateIso: string) {
+    if (this.blocksByDate.has(dateIso)) return;
+
+    const fromIso = this.combineDateTimeISO(dateIso, '00:00'); // ✅ local
+    const toIso = this.addMinutesISO(fromIso, 24 * 60);
+
+    const { data, error } = await this.apptRepo.listBlockedSlotsByDayRange(fromIso, toIso, 500);
+
+    if (error) {
+      this.toast.error('Error', error.message ?? 'No se pudieron cargar bloqueos');
+      this.blocksByDate.set(dateIso, []);
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.blocksByDate.set(dateIso, (data ?? []) as BlockedSlotRow[]);
+  }
+
+  private async isRangeBlockedOrBusy(dateIso: string, startIso: string, endIso: string, ignoreAppointmentId: string | null) {
+    // 0) disponibilidad del día (seguridad extra)
+    await this.ensureAvailabilityLoaded();
+    if (!this.isDayEnabled(dateIso)) {
+      this.toast.error('Día no disponible', 'Ese día está deshabilitado en disponibilidad');
+      return true;
+    }
+
+    // 1) bloqueos en server
+    const { data: blocks, error: blockErr } = await this.apptRepo.listBlockedSlotsByRange(startIso, endIso, 50);
+
+    if (blockErr) {
+      this.toast.error('Error', blockErr.message ?? 'No se pudo validar bloqueos');
+      this.cdr.detectChanges();
+      return true;
+    }
+
+    if ((blocks ?? []).length > 0) {
+      const b: any = (blocks as any[])[0];
+      this.toast.error('Horario bloqueado', `${b?.reason ?? 'Bloqueo'}`);
+      this.cdr.detectChanges();
+      return true;
+    }
+
+    // 2) citas ocupadas (rows local)
+    const busy = this.rows
+      .filter((r) => r.date === dateIso)
+      .filter((r) => r.status !== 'cancelled')
+      .filter((r) => (ignoreAppointmentId ? r.id !== ignoreAppointmentId : true))
+      .some((r) => {
+        const dur = r._durationMin ?? this.slotMinutes ?? 30;
+        const aStart = this.combineDateTimeISO(r.date, r.time);
+        const aEnd = this.addMinutesISO(aStart, dur);
+        return this.overlaps(startIso, endIso, aStart, aEnd);
+      });
+
+    if (busy) {
+      this.toast.error('Horario ocupado', 'Ya existe una cita en ese horario');
+      this.cdr.detectChanges();
+      return true;
+    }
+
+    return false;
+  }
+
+  private isFreeLocal(dateIso: string, startIso: string, endIso: string, ignoreAppointmentId: string | null): boolean {
+    // bloqueos del día (cache)
+    const dayBlocks = this.blocksByDate.get(dateIso) ?? [];
+    const isBlocked = dayBlocks.some((b) => this.overlaps(startIso, endIso, b.start_at, b.end_at));
+    if (isBlocked) return false;
+
+    // citas ocupadas
+    const isBusy = this.rows
+      .filter((r) => r.date === dateIso)
+      .filter((r) => r.status !== 'cancelled')
+      .filter((r) => (ignoreAppointmentId ? r.id !== ignoreAppointmentId : true))
+      .some((r) => {
+        const dur = r._durationMin ?? this.slotMinutes ?? 30;
+        const aStart = this.combineDateTimeISO(r.date, r.time);
+        const aEnd = this.addMinutesISO(aStart, dur);
+        return this.overlaps(startIso, endIso, aStart, aEnd);
+      });
+
+    return !isBusy;
+  }
+
+  private overlaps(aStartIso: string, aEndIso: string, bStartIso: string, bEndIso: string): boolean {
+    const aStart = new Date(aStartIso).getTime();
+    const aEnd = new Date(aEndIso).getTime();
+    const bStart = new Date(bStartIso).getTime();
+    const bEnd = new Date(bEndIso).getTime();
+
+    if ([aStart, aEnd, bStart, bEnd].some((x) => Number.isNaN(x))) return false;
+    return aStart < bEnd && aEnd > bStart;
+  }
+
+  // =========================
+  // ✅ BLOQUEAR DÍA COMPLETO (helper listo para usar)
+  // =========================
+  async blockAllDay(dateIso: string, reason?: string) {
+    // start/end en hora local, y luego ISO
+    const startIso = this.combineDateTimeISO(dateIso, '00:00');
+    const endIso = this.addMinutesISO(startIso, 24 * 60);
+
+    const { error } = await this.apptRepo.createBlockedSlotAllDay(startIso, endIso, reason ?? 'Bloqueo día completo');
+    if (error) {
+      this.toast.error('Error', error.message ?? 'No se pudo bloquear el día');
+      return;
+    }
+
+    // refresca cache de bloqueos del día
+    this.blocksByDate.delete(dateIso);
+    await this.ensureBlocksLoaded(dateIso);
+
+    // refresca combos si están en ese día
+    if (this.isCreateModalOpen && this.formDate === dateIso) await this.refreshCreateHourOptions(dateIso);
+    if (this.isRescheduleModalOpen && this.rescheduleDate === dateIso) await this.refreshRescheduleHourOptions(dateIso);
+
+    this.toast.success('Bloqueado', `Se bloqueó todo el día ${this.formatDateES(dateIso)}`);
+  }
+
+  // =========================
   // Click outside close
   // =========================
   @HostListener('document:click', ['$event'])
@@ -596,7 +863,6 @@ export class AppointmentsListComponent implements OnInit {
     this.closeRowMenu();
     this.closeDatePicker();
 
-    // ✅ cerrar dropdown paciente
     if (this.isPatientDropdownOpen) {
       this.isPatientDropdownOpen = false;
       this.cdr.detectChanges();
@@ -614,9 +880,9 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // MAPPING (DB -> UI)
+  // MAPPING
   // =========================
-  private toVM(r: any): AppointmentRow {
+  private toVM(r: any): AppointmentVM {
     const patient = r.patient ?? r.patients ?? null;
 
     const patientName = patient
@@ -627,8 +893,7 @@ export class AppointmentsListComponent implements OnInit {
     const phone = patient?.phone ?? '—';
 
     const { date, time } = this.splitDateTimeLocal(r.start_at);
-
-    const durationMin = this.diffMinutes(r.start_at, r.end_at) ?? 30;
+    const durationMin = this.diffMinutes(r.start_at, r.end_at) ?? (this.slotMinutes ?? 30);
 
     return {
       id: r.id,
@@ -667,6 +932,7 @@ export class AppointmentsListComponent implements OnInit {
     return Math.max(1, Math.round((b - a) / 60000));
   }
 
+  // ✅ genera ISO desde fecha/hora LOCAL (esto es lo correcto)
   private combineDateTimeISO(date: string, time: string): string {
     const [y, m, d] = date.split('-').map(Number);
     const [hh, mm] = time.split(':').map(Number);
@@ -681,9 +947,6 @@ export class AppointmentsListComponent implements OnInit {
     return d.toISOString();
   }
 
-  // =========================
-  // utils
-  // =========================
   private todayISO(): string {
     const d = new Date();
     return this.toISODate(d);

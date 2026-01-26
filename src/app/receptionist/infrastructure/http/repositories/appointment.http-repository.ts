@@ -22,8 +22,27 @@ export type AppointmentRow = {
   patient?: AppointmentPatient | null;
 };
 
+export type BlockedSlotRow = {
+  id: string;
+  start_at: string;
+  end_at: string;
+  reason: string | null;
+};
+
+export type AvailabilitySettingsRow = {
+  id: string;
+  timezone: string;
+  slot_minutes: number;
+  working_hours: any; // jsonb
+  created_at: string;
+  updated_at: string;
+};
+
 @Injectable({ providedIn: 'root' })
 export class AppointmentHttpRepository {
+  // =========================
+  // APPOINTMENTS
+  // =========================
   async list(limit = 200) {
     return await supabase
       .from('appointments')
@@ -100,7 +119,6 @@ export class AppointmentHttpRepository {
       .maybeSingle();
   }
 
-  // ✅ MISMA SOLUCIÓN QUE PACIENTS: upsert (POST) para evitar PATCH/CORS
   async update(id: string, payload: any) {
     return await supabase
       .from('appointments')
@@ -126,10 +144,7 @@ export class AppointmentHttpRepository {
   }
 
   async remove(id: string) {
-    return await supabase
-      .from('appointments')
-      .delete()
-      .eq('id', id);
+    return await supabase.from('appointments').delete().eq('id', id);
   }
 
   async lastByPatientIds(patientIds: string[], limit = 5000) {
@@ -141,4 +156,70 @@ export class AppointmentHttpRepository {
       .limit(limit);
   }
 
+  // =========================
+  // BLOQUEOS
+  // =========================
+  async listBlockedSlotsByRange(fromIso: string, toIso: string, limit = 500) {
+    return await supabase
+      .from('blocked_slots')
+      .select('id, start_at, end_at, reason')
+      .lt('start_at', toIso)
+      .gt('end_at', fromIso)
+      .order('start_at', { ascending: true })
+      .limit(limit)
+      .returns<BlockedSlotRow[]>();
+  }
+
+  async listBlockedSlotsByDayRange(fromIso: string, toIso: string, limit = 500) {
+    return await this.listBlockedSlotsByRange(fromIso, toIso, limit);
+  }
+
+  async createBlockedSlot(payload: { start_at: string; end_at: string; reason?: string | null }) {
+    return await supabase
+      .from('blocked_slots')
+      .insert({
+        start_at: payload.start_at,
+        end_at: payload.end_at,
+        reason: payload.reason ?? null,
+      })
+      .select('id, start_at, end_at, reason')
+      .single()
+      .returns<BlockedSlotRow>();
+  }
+
+  // ✅ Bloquear día completo (te paso start/end ya calculados en el componente en HORA LOCAL)
+  async createBlockedSlotAllDay(startIso: string, endIso: string, reason?: string | null) {
+    return await this.createBlockedSlot({
+      start_at: startIso,
+      end_at: endIso,
+      reason: reason ?? 'Bloqueo día completo',
+    });
+  }
+
+  // =========================
+  // DISPONIBILIDAD (CORRECTO: availability_settings)
+  // =========================
+  async getAvailabilitySettings() {
+    return await supabase
+      .from('availability_settings')
+      .select('id, timezone, slot_minutes, working_hours, created_at, updated_at')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+      .returns<AvailabilitySettingsRow | null>();
+  }
+
+  // (Opcional) si tu pantalla de disponibilidad guarda el JSON:
+  async updateAvailabilitySettings(id: string, payload: Partial<Pick<AvailabilitySettingsRow, 'timezone' | 'slot_minutes' | 'working_hours'>>) {
+    return await supabase
+      .from('availability_settings')
+      .update({
+        ...payload,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('id, timezone, slot_minutes, working_hours, created_at, updated_at')
+      .single()
+      .returns<AvailabilitySettingsRow>();
+  }
 }

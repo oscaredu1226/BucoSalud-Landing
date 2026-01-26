@@ -214,6 +214,7 @@
         <p class="text-muted-foreground mt-1">Intenta nuevamente.</p>
         <button
           type="button"
+          (click)="loadAppointments()"
           class="mt-4 inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold
                  bg-primary text-primary-foreground"
         >
@@ -395,7 +396,7 @@
 
           <div class="px-7 py-6">
             <div class="grid gap-5">
-              <!-- ✅ ÚNICO CAMBIO: Paciente con dropdown -->
+              <!-- Paciente con dropdown -->
               <div class="relative" data-popover>
                 <label class="block text-sm font-semibold text-foreground mb-2">Paciente</label>
                 <input
@@ -453,6 +454,7 @@
                   <label class="block text-sm font-semibold text-foreground mb-2">Fecha</label>
                   <input
                     [(ngModel)]="formDate"
+                    (ngModelChange)="onCreateDateChange()"
                     type="date"
                     class="h-12 w-full rounded-2xl border border-border bg-background px-4
                            text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
@@ -467,7 +469,7 @@
                            text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   >
                     <option value="" disabled>Hora</option>
-                    @for (h of hours; track h) {
+                    @for (h of createHourOptions; track h) {
                       <option [value]="h">{{ h }}</option>
                     }
                   </select>
@@ -649,6 +651,7 @@
                   <label class="block text-sm font-semibold text-foreground mb-2">Nueva fecha</label>
                   <input
                     [(ngModel)]="rescheduleDate"
+                    (ngModelChange)="onRescheduleDateChange()"
                     type="date"
                     class="h-12 w-full rounded-2xl border border-border bg-background px-4
                            text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
@@ -662,7 +665,7 @@
                     class="h-12 w-full rounded-2xl border border-border bg-background px-4
                            text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   >
-                    @for (h of hours; track h) {
+                    @for (h of rescheduleHourOptions; track h) {
                       <option [value]="h">{{ h }}</option>
                     }
                   </select>
