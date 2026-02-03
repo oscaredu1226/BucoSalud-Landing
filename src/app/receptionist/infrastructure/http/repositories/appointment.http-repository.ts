@@ -156,6 +156,18 @@ export class AppointmentHttpRepository {
       .limit(limit);
   }
 
+  // ✅ NUEVO: Validar si hay alguna cita que se cruce con el rango
+  // overlap: existing.start_at < endIso AND existing.end_at > startIso
+  async hasOverlappingAppointment(startIso: string, endIso: string) {
+    return await supabase
+      .from('appointments')
+      .select('id')
+      .lt('start_at', endIso)
+      .gt('end_at', startIso)
+      .limit(1)
+      .maybeSingle();
+  }
+
   // =========================
   // BLOQUEOS
   // =========================
@@ -187,7 +199,7 @@ export class AppointmentHttpRepository {
       .returns<BlockedSlotRow>();
   }
 
-  // ✅ Bloquear día completo (te paso start/end ya calculados en el componente en HORA LOCAL)
+  // ✅ Bloquear día completo (te paso start/end ya calculados en el componente)
   async createBlockedSlotAllDay(startIso: string, endIso: string, reason?: string | null) {
     return await this.createBlockedSlot({
       start_at: startIso,
@@ -197,7 +209,7 @@ export class AppointmentHttpRepository {
   }
 
   // =========================
-  // DISPONIBILIDAD (CORRECTO: availability_settings)
+  // DISPONIBILIDAD (availability_settings)
   // =========================
   async getAvailabilitySettings() {
     return await supabase
@@ -209,8 +221,10 @@ export class AppointmentHttpRepository {
       .returns<AvailabilitySettingsRow | null>();
   }
 
-  // (Opcional) si tu pantalla de disponibilidad guarda el JSON:
-  async updateAvailabilitySettings(id: string, payload: Partial<Pick<AvailabilitySettingsRow, 'timezone' | 'slot_minutes' | 'working_hours'>>) {
+  async updateAvailabilitySettings(
+    id: string,
+    payload: Partial<Pick<AvailabilitySettingsRow, 'timezone' | 'slot_minutes' | 'working_hours'>>
+  ) {
     return await supabase
       .from('availability_settings')
       .update({

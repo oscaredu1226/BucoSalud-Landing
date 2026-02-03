@@ -51,9 +51,10 @@ export class ProcessSection {
 
 
   scrollToSection(id: string) {
-    const el = document.querySelector(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    const el = document.getElementById(id);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
 
   firstWord(title: string): string {
     return title.split(' ')[0] ?? title;

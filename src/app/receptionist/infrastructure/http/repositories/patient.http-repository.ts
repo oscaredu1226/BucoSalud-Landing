@@ -66,4 +66,13 @@ export class PatientHttpRepository {
       .delete()
       .eq('id', id);
   }
+
+  async findByDni(dni: string) {
+    return await supabase
+      .from('patients')
+      .select('id, first_names, last_names, dni, phone')
+      .eq('dni', dni)
+      .maybeSingle();
+  }
+
 }

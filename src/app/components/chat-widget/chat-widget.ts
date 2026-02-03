@@ -98,7 +98,6 @@ export class ChatWidget {
     this.messages = [...this.messages, userMessage, botMessage];
     this.scrollToBottomSoon();
 
-    // NO TOCAR: reservaciones (scroll) tal cual lo tienes
     if (optionId === 'reservations') {
       setTimeout(() => {
         const reservationsSection =
