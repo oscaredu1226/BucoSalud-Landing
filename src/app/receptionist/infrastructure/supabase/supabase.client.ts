@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import {environment} from '../../../../environments/environment';
 
-export const SUPABASE_URL = 'https://blhnevrsttzusemfurfy.supabase.co';
-export const SUPABASE_ANON_KEY = 'sb_publishable_fxtttmfXrH0XagAnjjlI2A_FJ4PYVL8';
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(
+  environment.supabaseUrl,
+  environment.supabaseAnonKey
+);

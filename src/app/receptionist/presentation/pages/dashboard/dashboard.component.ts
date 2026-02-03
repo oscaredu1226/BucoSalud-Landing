@@ -1,9 +1,8 @@
 import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
-import {AppointmentHttpRepository} from '../../../infrastructure/http/repositories/appointment.http-repository';
-import {PatientHttpRepository} from '../../../infrastructure/http/repositories/patient.http-repository';
-
+import { AppointmentHttpRepository } from '../../../infrastructure/http/repositories/appointment.http-repository';
+import { PatientHttpRepository } from '../../../infrastructure/http/repositories/patient.http-repository';
 
 type Kpi = { label: string; value: string; helper: string };
 type RecentAppointment = {
@@ -29,10 +28,8 @@ export class DashboardComponent implements OnInit {
   isLoading = false;
   hasError = false;
 
-  // header date
   todayLabel = this.buildTodayLabelES();
 
-  // KPIs (se llenan con data real)
   kpis: Kpi[] = [
     { label: 'Citas hoy', value: '0', helper: 'Programadas' },
     { label: 'Próxima cita', value: '—', helper: 'Sin próximas' },
@@ -40,7 +37,6 @@ export class DashboardComponent implements OnInit {
     { label: 'Disponibilidad', value: 'Activa', helper: 'Hoy 10:00–18:00' },
   ];
 
-  // tabla (se llena con data real)
   recent: RecentAppointment[] = [];
 
   trackByLabel = (_: number, item: Kpi) => item.label;
@@ -55,7 +51,7 @@ export class DashboardComponent implements OnInit {
     this.hasError = false;
     this.cdr.detectChanges();
 
-    // ===== 1) PACIENTES (conteo simple con list)
+    // ===== 1) PACIENTES
     const { data: patients, error: pErr } = await this.patientsRepo.list(5000);
     if (pErr) {
       this.hasError = true;
@@ -65,12 +61,25 @@ export class DashboardComponent implements OnInit {
     }
     const patientsCount = (patients ?? []).length;
 
-    // ===== 2) CITAS HOY (00:00 -> +1 día)
-    const todayISO = this.todayISO();
-    const fromIso = `${todayISO}T00:00:00.000Z`;
-    const next = new Date(fromIso);
-    next.setUTCDate(next.getUTCDate() + 1);
-    const toIso = next.toISOString();
+    // ===== 2) CITAS HOY (inicio/fin del día LOCAL -> convertir a UTC ISO)
+    const nowLocal = new Date();
+
+    const fromLocal = new Date(
+      nowLocal.getFullYear(),
+      nowLocal.getMonth(),
+      nowLocal.getDate(),
+      0, 0, 0, 0
+    );
+
+    const toLocal = new Date(
+      nowLocal.getFullYear(),
+      nowLocal.getMonth(),
+      nowLocal.getDate(),
+      23, 59, 59, 999
+    );
+
+    const fromIso = fromLocal.toISOString(); // UTC ISO (correcto para timestamptz)
+    const toIso = toLocal.toISOString();     // UTC ISO (correcto para timestamptz)
 
     const { data: todayAppts, error: aErr } = await this.apptRepo.listByDateRange(fromIso, toIso, 5000);
     if (aErr) {
@@ -83,9 +92,8 @@ export class DashboardComponent implements OnInit {
     const todayRows = (todayAppts ?? []) as any[];
 
     // ===== 3) PROXIMA CITA (desde ahora)
-    const now = new Date();
-    const allForScan = todayRows; // si quieres buscar también mañana, usa apptRepo.list(...) y filtra
-    const nextAppt = this.findNextAppointment(allForScan, now);
+    const allForScan = todayRows;
+    const nextAppt = this.findNextAppointment(allForScan, new Date());
 
     // ===== 4) LLENAR TABLA (hoy)
     this.recent = todayRows
@@ -110,7 +118,6 @@ export class DashboardComponent implements OnInit {
   }
 
   private findNextAppointment(rows: any[], now: Date): { time: string; patient: string } | null {
-    // buscamos la más cercana desde "ahora"
     let best: { startsAt: number; time: string; patient: string } | null = null;
 
     for (const r of rows) {
@@ -119,7 +126,6 @@ export class DashboardComponent implements OnInit {
 
       const d = new Date(startIso);
       if (Number.isNaN(d.getTime())) continue;
-
       if (d.getTime() < now.getTime()) continue;
 
       const patientName = this.patientNameFromRow(r);
@@ -165,7 +171,6 @@ export class DashboardComponent implements OnInit {
     if (v === 'cancelled') return 'Cancelada';
     if (v === 'completed') return 'Completada';
 
-    // por si ya viene en español
     if (v === 'pendiente') return 'Pendiente';
     if (v === 'confirmada') return 'Confirmada';
     if (v === 'cancelada') return 'Cancelada';
@@ -175,7 +180,6 @@ export class DashboardComponent implements OnInit {
   }
 
   private buildTodayLabelES(): string {
-    // Ej: "Jueves, 22 de Enero"
     const d = new Date();
     const weekday = d.toLocaleDateString('es-PE', { weekday: 'long' });
     const day = d.toLocaleDateString('es-PE', { day: '2-digit' });
@@ -185,6 +189,7 @@ export class DashboardComponent implements OnInit {
     return `${cap(weekday)}, ${day} de ${cap(month)}`;
   }
 
+  // Ya no necesitas todayISO/toISODate para el rango "hoy".
   private todayISO(): string {
     return this.toISODate(new Date());
   }
