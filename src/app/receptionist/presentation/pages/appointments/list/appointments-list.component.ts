@@ -21,8 +21,8 @@ type AppointmentVM = {
   dni: string;
   phone: string;
 
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
+  date: string;
+  time: string;
 
   reason: string;
   status: AppointmentStatus;
@@ -60,77 +60,60 @@ export class AppointmentsListComponent implements OnInit {
   isLoading = false;
   hasError = false;
 
-  // ✅ Skeleton helpers (solo para template)
   readonly skeletonRows = Array.from({ length: 6 });
   readonly skeletonCards = Array.from({ length: 4 });
 
-  // filtros
   q = '';
   status: 'all' | AppointmentStatus = 'all';
   dateFilter: string = this.todayISO();
   isDatePickerOpen = false;
 
-  // dropdown por fila (acciones)
   openRowMenuId: string | null = null;
 
-  // modal nueva cita
   isCreateModalOpen = false;
 
-  // modal reprogramar
   isRescheduleModalOpen = false;
   rescheduleRow: AppointmentVM | null = null;
   rescheduleDate: string = this.todayISO();
   rescheduleTime: string = '';
 
-  // modal detalles
   isDetailModalOpen = false;
   detailRow: AppointmentVM | null = null;
 
-  // confirm cancelar
   isConfirmDeleteOpen = false;
   confirmTitle = 'Cancelar cita';
   confirmMessage = '¿Seguro que deseas cancelar esta cita?';
   pendingDeleteRow: AppointmentVM | null = null;
 
-  // form modal
   formPatientQuery = '';
   formDate: string = this.todayISO();
   formHour: string = '';
   formNotes = '';
 
-  // base hours (fallback si no hay settings)  ✅ NO LO QUITÉ (fallback)
   readonly hours: string[] = this.buildHours(10, 18);
 
-  // opciones filtradas
   createHourOptions: string[] = [];
   rescheduleHourOptions: string[] = [];
 
-  // bloqueos cacheados por día
   private blocksByDate = new Map<string, BlockedSlotRow[]>();
 
-  // disponibilidad cache (availability_settings)
   private availability: AvailabilitySettingsRow | null = null;
   private workingHours: WorkingHours | null = null;
   private slotMinutes = 30;
 
-  // autocomplete paciente
   selectedPatient: PatientRow | null = null;
   patientResults: PatientRow[] = [];
   isPatientDropdownOpen = false;
   isPatientSearching = false;
   private patientSearchTimer: any = null;
 
-  // calendario filtro
   viewMonth = this.startOfMonthISO(this.todayISO());
   calendarWeeks: CalendarCell[][] = [];
   readonly weekLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  // citas
   rows: AppointmentVM[] = [];
 
-  // =========================
-  // INIT
-  // =========================
+
   async ngOnInit() {
     this.rebuildCalendar();
 
@@ -140,7 +123,6 @@ export class AppointmentsListComponent implements OnInit {
     await this.refreshCreateHourOptions(this.formDate);
   }
 
-  // 👇 IMPORTANTE: no private (por si en HTML llamas reintentar)
   async loadAppointments() {
     this.isLoading = true;
     this.hasError = false;
@@ -150,7 +132,6 @@ export class AppointmentsListComponent implements OnInit {
     let toIso = '';
 
     if (this.dateFilter) {
-      // ojo: esto filtra por start_at en UTC; está OK para lista
       fromIso = `${this.dateFilter}T00:00:00.000Z`;
       const next = new Date(fromIso);
       next.setUTCDate(next.getUTCDate() + 1);
@@ -176,9 +157,7 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // =========================
-  // Computed
-  // =========================
+
   get filteredRows(): AppointmentVM[] {
     const q = this.q.trim().toLowerCase();
 
@@ -197,7 +176,6 @@ export class AppointmentsListComponent implements OnInit {
       });
   }
 
-  trackById = (_: number, row: AppointmentVM) => row.id;
 
   formatDateES(iso: string): string {
     if (!iso || iso.length < 10) return iso;
@@ -207,9 +185,7 @@ export class AppointmentsListComponent implements OnInit {
     return `${d}/${m}/${y}`;
   }
 
-  // =========================
-  // DISPONIBILIDAD (availability_settings)
-  // =========================
+
   private async ensureAvailabilityLoaded() {
     if (this.availability) return;
 
@@ -230,7 +206,6 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   private dowKeyFromDate(dateIso: string): keyof WorkingHours {
-    // 0=Sun ... 6=Sat
     const d = new Date(dateIso + 'T00:00:00');
     const dow = d.getDay();
     const map: (keyof WorkingHours)[] = ['sun','mon','tue','wed','thu','fri','sat'];
@@ -238,14 +213,12 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   private isDayEnabled(dateIso: string): boolean {
-    if (!this.workingHours) return true; // fallback: permitir si no hay settings
+    if (!this.workingHours) return true;
     const key = this.dowKeyFromDate(dateIso);
     return !!this.workingHours[key]?.enabled;
   }
 
-  // =========================
-  // ✅ NUEVO: generar horas base desde working_hours (sin tocar nada más)
-  // =========================
+
   private parseHHmm(hhmm: string): { hh: number; mm: number } | null {
     if (!hhmm || typeof hhmm !== 'string') return null;
     const [hh, mm] = hhmm.split(':').map(Number);
@@ -255,7 +228,6 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   private getWorkingHoursSlotsForDate(dateIso: string): string[] {
-    // si no hay settings, no rompas: usa fallback 10-18
     if (!this.workingHours) return [...this.hours];
 
     const key = this.dowKeyFromDate(dateIso);
@@ -289,9 +261,7 @@ export class AppointmentsListComponent implements OnInit {
     return out;
   }
 
-  // =========================
-  // ✅ Autocomplete paciente
-  // =========================
+
   private patientLabel(p: PatientRow): string {
     const fullName = `${p.first_names ?? ''} ${p.last_names ?? ''}`.trim();
     return `${fullName || '(Sin nombre)'} · DNI ${p.dni}`;
@@ -345,9 +315,7 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // =========================
-  // Date picker
-  // =========================
+
   toggleDatePicker() {
     this.isDatePickerOpen = !this.isDatePickerOpen;
     this.openRowMenuId = null;
@@ -433,9 +401,7 @@ export class AppointmentsListComponent implements OnInit {
     this.calendarWeeks = weeks;
   }
 
-  // =========================
-  // Row menu
-  // =========================
+
   toggleRowMenu(rowId: string) {
     this.isDatePickerOpen = false;
     this.openRowMenuId = this.openRowMenuId === rowId ? null : rowId;
@@ -445,9 +411,7 @@ export class AppointmentsListComponent implements OnInit {
     this.openRowMenuId = null;
   }
 
-  // =========================
-  // Cancelación
-  // =========================
+
   requestDelete(row: AppointmentVM) {
     this.closeRowMenu();
     this.isDatePickerOpen = false;
@@ -490,9 +454,7 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // =========================
-  // Detalles
-  // =========================
+
   openDetailModal(row: AppointmentVM) {
     this.closeRowMenu();
     this.isDatePickerOpen = false;
@@ -507,9 +469,6 @@ export class AppointmentsListComponent implements OnInit {
     this.detailRow = null;
   }
 
-  // =========================
-  // Reprogramar
-  // =========================
   async openRescheduleModal(row: AppointmentVM) {
     this.closeRowMenu();
     this.isDatePickerOpen = false;
@@ -517,7 +476,6 @@ export class AppointmentsListComponent implements OnInit {
     this.rescheduleRow = row;
     this.rescheduleDate = row.date;
 
-    // ✅ NO CAMBIO TU LÓGICA: solo evito depender de this.hours si el día cambió.
     this.rescheduleTime = row.time || '';
 
     await this.refreshRescheduleHourOptions(this.rescheduleDate);
@@ -601,9 +559,7 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // =========================
-  // Nueva cita
-  // =========================
+
   async openCreateModal() {
     this.isCreateModalOpen = true;
     this.openRowMenuId = null;
@@ -725,9 +681,7 @@ export class AppointmentsListComponent implements OnInit {
     await this.loadAppointments();
   }
 
-  // =========================
-  // ✅ HORAS DISPONIBLES (usa working_hours si existe)
-  // =========================
+
   private async refreshCreateHourOptions(dateIso: string) {
     await this.ensureAvailabilityLoaded();
 
@@ -745,7 +699,6 @@ export class AppointmentsListComponent implements OnInit {
 
     const duration = this.slotMinutes ?? 30;
 
-    // ✅ CAMBIO MINIMO: horas base vienen de working_hours
     const baseHours = this.getWorkingHoursSlotsForDate(dateIso);
 
     this.createHourOptions = baseHours.filter((hhmm) => {
@@ -775,7 +728,6 @@ export class AppointmentsListComponent implements OnInit {
     const duration = this.rescheduleRow?._durationMin ?? this.slotMinutes ?? 30;
     const ignoreId = this.rescheduleRow?.id ?? null;
 
-    // ✅ CAMBIO MINIMO: horas base vienen de working_hours
     const baseHours = this.getWorkingHoursSlotsForDate(dateIso);
 
     this.rescheduleHourOptions = baseHours.filter((hhmm) => {
@@ -790,7 +742,7 @@ export class AppointmentsListComponent implements OnInit {
   private async ensureBlocksLoaded(dateIso: string) {
     if (this.blocksByDate.has(dateIso)) return;
 
-    const fromIso = this.combineDateTimeISO(dateIso, '00:00'); // ✅ local
+    const fromIso = this.combineDateTimeISO(dateIso, '00:00');
     const toIso = this.addMinutesISO(fromIso, 24 * 60);
 
     const { data, error } = await this.apptRepo.listBlockedSlotsByDayRange(fromIso, toIso, 500);
@@ -876,28 +828,6 @@ export class AppointmentsListComponent implements OnInit {
     return aStart < bEnd && aEnd > bStart;
   }
 
-  async blockAllDay(dateIso: string, reason?: string) {
-    const startIso = this.combineDateTimeISO(dateIso, '00:00');
-    const endIso = this.addMinutesISO(startIso, 24 * 60);
-
-    const { error } = await this.apptRepo.createBlockedSlotAllDay(startIso, endIso, reason ?? 'Bloqueo día completo');
-    if (error) {
-      this.toast.error('Error', error.message ?? 'No se pudo bloquear el día');
-      return;
-    }
-
-    this.blocksByDate.delete(dateIso);
-    await this.ensureBlocksLoaded(dateIso);
-
-    if (this.isCreateModalOpen && this.formDate === dateIso) await this.refreshCreateHourOptions(dateIso);
-    if (this.isRescheduleModalOpen && this.rescheduleDate === dateIso) await this.refreshRescheduleHourOptions(dateIso);
-
-    this.toast.success('Bloqueado', `Se bloqueó todo el día ${this.formatDateES(dateIso)}`);
-  }
-
-  // =========================
-  // Click outside close
-  // =========================
   @HostListener('document:click', ['$event'])
   onDocClick(ev: MouseEvent) {
     const target = ev.target as HTMLElement | null;
@@ -925,9 +855,6 @@ export class AppointmentsListComponent implements OnInit {
     }
   }
 
-  // =========================
-  // MAPPING
-  // =========================
   private toVM(r: any): AppointmentVM {
     const patient = r.patient ?? r.patients ?? null;
 
