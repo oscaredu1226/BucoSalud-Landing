@@ -28,7 +28,6 @@ export class DashboardComponent implements OnInit {
   isLoading = false;
   hasError = false;
 
-  // ✅ skeleton helpers
   readonly skeletonKpis = Array.from({ length: 4 });
   readonly skeletonRows = Array.from({ length: 6 });
   readonly skeletonCards = Array.from({ length: 5 });
@@ -61,12 +60,10 @@ export class DashboardComponent implements OnInit {
       this.hasError = false;
       this.cdr.detectChanges();
 
-      // ===== 1) PACIENTES
       const { data: patients, error: pErr } = await this.patientsRepo.list(5000);
       if (pErr) throw pErr;
       const patientsCount = (patients ?? []).length;
 
-      // ===== 2) CITAS HOY (rango local → UTC)
       const nowLocal = new Date();
       const fromLocal = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate(), 0, 0, 0, 0);
       const toLocal = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate(), 23, 59, 59, 999);
@@ -77,15 +74,12 @@ export class DashboardComponent implements OnInit {
 
       const todayRows = (todayAppts ?? []) as any[];
 
-      // ===== 3) PRÓXIMA CITA
       const nextAppt = this.findNextAppointment(todayRows, new Date());
 
-      // ===== 4) TABLA
       this.recent = todayRows
         .map((r) => this.toRecentVM(r))
         .sort((a, b) => a.time.localeCompare(b.time));
 
-      // ===== 5) KPIS
       this.kpis = [
         { label: 'Citas hoy', value: String(todayRows.length), helper: 'Programadas' },
         {
@@ -105,9 +99,7 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // =========================
-  // HELPERS
-  // =========================
+
   private findNextAppointment(rows: any[], now: Date): { time: string; patient: string } | null {
     let best: { startsAt: number; time: string; patient: string } | null = null;
 
