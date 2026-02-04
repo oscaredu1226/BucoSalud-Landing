@@ -17,7 +17,7 @@
           type="button"
           (click)="openCreateModal()"
           class="inline-flex items-center gap-3 rounded-2xl px-5 py-3 text-sm font-semibold
-                 bg-primary text-primary-foreground transition"
+                 bg-primary text-primary-foreground transition hover:opacity-95 active:opacity-90"
         >
           <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -86,7 +86,7 @@
           </svg>
         </div>
 
-        <!-- Date filter -->
+        <!-- Date filter (popover calendario) -->
         <div class="relative" data-popover>
           <button
             type="button"
@@ -111,7 +111,12 @@
 
           @if (isDatePickerOpen) {
             <div
-              class="absolute right-0 mt-3 w-[360px] rounded-2xl border border-border bg-card shadow-lg p-5 z-50"
+              class="
+                absolute z-50 mt-3 rounded-2xl border border-border bg-card shadow-lg p-5
+                w-[calc(100vw-2rem)] max-w-[360px]
+                left-1/2 -translate-x-1/2
+                sm:left-auto sm:translate-x-0 sm:right-0
+              "
               data-popover
             >
               <div class="flex items-center justify-between">
@@ -156,7 +161,7 @@
                     <button
                       type="button"
                       (click)="pickDate(cell)"
-                      class="h-12 rounded-xl text-sm font-semibold transition flex items-center justify-center"
+                      class="h-11 sm:h-12 rounded-xl text-sm font-semibold transition flex items-center justify-center"
                       [ngClass]="{
                         'text-muted-foreground': !cell.inMonth,
                         'text-foreground': cell.inMonth && !cell.isSelected,
@@ -182,7 +187,7 @@
                 <button
                   type="button"
                   (click)="closeDatePicker()"
-                  class="h-11 rounded-2xl px-4 text-sm font-semibold bg-primary text-primary-foreground"
+                  class="h-11 rounded-2xl px-4 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-95 active:opacity-90"
                 >
                   Cerrar
                 </button>
@@ -203,12 +208,11 @@
       </div>
     </div>
 
-    <!-- States -->
-    @if (isLoading) {
-      <div class="mt-8 bg-card rounded-2xl border border-border p-10 text-center text-muted-foreground">
-        Cargando citas...
-      </div>
-    } @else if (hasError) {
+    <!-- =========================
+         STATES + LIST (RESPONSIVE)
+         ========================= -->
+
+    @if (hasError && !isLoading) {
       <div class="mt-8 bg-card rounded-2xl border border-border p-10 text-center">
         <p class="font-semibold text-foreground">Ocurrió un error</p>
         <p class="text-muted-foreground mt-1">Intenta nuevamente.</p>
@@ -216,174 +220,307 @@
           type="button"
           (click)="loadAppointments()"
           class="mt-4 inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold
-                 bg-primary text-primary-foreground"
+                 bg-primary text-primary-foreground hover:opacity-95 active:opacity-90"
         >
           Reintentar
         </button>
       </div>
     } @else {
 
-      <div class="mt-8 bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-primary/5 text-foreground">
-            <tr class="border-b border-border">
-              <th class="px-6 py-4 text-left font-semibold">Fecha</th>
-              <th class="px-6 py-4 text-left font-semibold">Hora</th>
-              <th class="px-6 py-4 text-left font-semibold">Paciente</th>
-              <th class="px-6 py-4 text-left font-semibold">Estado</th>
-              <th class="px-6 py-4 text-left font-semibold">Notas</th>
-              <th class="px-6 py-4 text-right font-semibold">Acciones</th>
-            </tr>
-            </thead>
+      <!-- ✅ MOBILE: cards (lg:hidden) -->
+      <div class="mt-8 lg:hidden">
+        @if (isLoading) {
+          <div class="space-y-4">
+            @for (x of skeletonCards; track $index) {
+              <div class="rounded-2xl border border-border bg-card p-4 animate-pulse">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="space-y-2 w-full">
+                    <div class="h-4 w-2/3 bg-muted rounded"></div>
+                    <div class="h-3 w-1/2 bg-muted rounded"></div>
+                  </div>
+                  <div class="h-8 w-8 bg-muted rounded-xl"></div>
+                </div>
 
-            <tbody class="divide-y divide-border">
-              @if (filteredRows.length === 0) {
-                <tr>
-                  <td class="px-6 py-12 text-center text-muted-foreground" colspan="6">
-                    No hay resultados con esos filtros.
-                  </td>
-                </tr>
-              } @else {
-                @for (row of filteredRows; track row.id) {
-                  <tr class="bg-card">
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <div class="h-10 bg-muted rounded-xl"></div>
+                  <div class="h-10 bg-muted rounded-xl"></div>
+                </div>
+
+                <div class="mt-3 h-10 bg-muted rounded-xl"></div>
+              </div>
+            }
+          </div>
+        } @else if (filteredRows.length === 0) {
+          <div class="bg-card rounded-2xl border border-border p-10 text-center text-muted-foreground">
+            No hay resultados con esos filtros.
+          </div>
+        } @else {
+          <div class="space-y-4">
+            @for (row of filteredRows; track row.id) {
+              <div class="bg-card rounded-2xl border border-border shadow-sm p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-foreground truncate">{{ row.patientName }}</p>
+                    <p class="text-sm text-muted-foreground mt-1">
+                      {{ formatDateES(row.date) }} · {{ row.time }}
+                    </p>
+                    <p class="text-sm text-muted-foreground mt-1">DNI: {{ row.dni }}</p>
+                  </div>
+
+                  <span
+                    class="shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border"
+                    [ngClass]="{
+                      'bg-emerald-500/15 text-emerald-700 border-emerald-500/30': row.status === 'confirmed',
+                      'bg-amber-500/15 text-amber-700 border-amber-500/30': row.status === 'pending',
+                      'bg-destructive/15 text-destructive border-destructive/30': row.status === 'cancelled'
+                    }"
+                  >
+                    {{ row.status }}
+                  </span>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    (click)="openDetailModal(row)"
+                    class="h-11 rounded-2xl px-4 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+                  >
+                    Ver detalles
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="openRescheduleModal(row)"
+                    class="h-11 rounded-2xl px-4 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+                  >
+                    Reprogramar
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  (click)="requestDelete(row)"
+                  class="mt-3 h-11 w-full rounded-2xl px-4 text-sm font-semibold bg-destructive text-destructive-foreground hover:opacity-95 active:opacity-90"
+                >
+                  Cancelar
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ✅ DESKTOP: tabla (hidden lg:block) -->
+      <div class="mt-8 hidden lg:block bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        @if (isLoading) {
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-primary/5 text-foreground">
+              <tr class="border-b border-border">
+                <th class="px-6 py-4 text-left font-semibold">Fecha</th>
+                <th class="px-6 py-4 text-left font-semibold">Hora</th>
+                <th class="px-6 py-4 text-left font-semibold">Paciente</th>
+                <th class="px-6 py-4 text-left font-semibold">Estado</th>
+                <th class="px-6 py-4 text-left font-semibold">Notas</th>
+                <th class="px-6 py-4 text-right font-semibold">Acciones</th>
+              </tr>
+              </thead>
+
+              <tbody class="divide-y divide-border">
+                @for (x of skeletonRows; track $index) {
+                  <tr class="bg-card animate-pulse">
+                    <td class="px-6 py-6"><div class="h-4 w-28 bg-muted rounded"></div></td>
+                    <td class="px-6 py-6"><div class="h-4 w-20 bg-muted rounded"></div></td>
                     <td class="px-6 py-6">
-                      <div class="flex items-center gap-3">
-                        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="2">
-                          <path d="M8 2v4"></path>
-                          <path d="M16 2v4"></path>
-                          <path d="M3 10h18"></path>
-                          <path d="M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
-                        </svg>
-                        <span class="font-medium text-foreground">{{ formatDateES(row.date) }}</span>
-                      </div>
+                      <div class="h-4 w-52 bg-muted rounded"></div>
+                      <div class="mt-2 h-3 w-28 bg-muted rounded"></div>
                     </td>
-
-                    <td class="px-6 py-6">
-                      <div class="flex items-center gap-3">
-                        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="2">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <path d="M12 6v6l4 2"></path>
-                        </svg>
-                        <span class="font-medium text-foreground">{{ row.time }}</span>
-                      </div>
-                    </td>
-
-                    <td class="px-6 py-6">
-                      <p class="font-semibold text-foreground">{{ row.patientName }}</p>
-                      <p class="text-sm text-muted-foreground">DNI: {{ row.dni }}</p>
-                    </td>
-
-                    <td class="px-6 py-6">
-                      <span
-                        class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold border"
-                        [ngClass]="{
-                          'bg-emerald-500/15 text-emerald-700 border-emerald-500/30': row.status === 'confirmed',
-                          'bg-amber-500/15 text-amber-700 border-amber-500/30': row.status === 'pending',
-                          'bg-destructive/15 text-destructive border-destructive/30': row.status === 'cancelled',
-                        }"
-                      >
-                        {{ row.status }}
-                      </span>
-                    </td>
-
-                    <td class="px-6 py-6">
-                      <span class="text-foreground" *ngIf="row.notes?.trim(); else noNotes">{{ row.notes }}</span>
-                      <ng-template #noNotes><span class="text-muted-foreground">—</span></ng-template>
-                    </td>
-
-                    <td class="px-6 py-6 text-right relative" data-popover>
-                      <button
-                        type="button"
-                        (click)="toggleRowMenu(row.id)"
-                        class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background hover:bg-muted transition"
-                        aria-label="Acciones"
-                      >
-                        <svg class="h-6 w-6 text-foreground" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="12" cy="5" r="1.8"></circle>
-                          <circle cx="12" cy="12" r="1.8"></circle>
-                          <circle cx="12" cy="19" r="1.8"></circle>
-                        </svg>
-                      </button>
-
-                      @if (openRowMenuId === row.id) {
-                        <div
-                          class="absolute right-0 mt-3 w-56 rounded-2xl border border-border bg-card shadow-lg overflow-hidden z-50"
-                          data-popover
-                        >
-                          <button
-                            type="button"
-                            (click)="openDetailModal(row)"
-                            class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
-                          >
-                            <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2">
-                              <circle cx="12" cy="12" r="3"></circle>
-                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"></path>
-                            </svg>
-                            Ver detalles
-                          </button>
-
-                          <button
-                            type="button"
-                            (click)="openRescheduleModal(row)"
-                            class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
-                          >
-                            <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2">
-                              <path d="M3 12a9 9 0 1 0 9-9"></path>
-                              <path d="M3 4v8h8"></path>
-                            </svg>
-                            Reprogramar
-                          </button>
-
-                          <div class="h-px bg-border"></div>
-
-                          <button
-                            type="button"
-                            (click)="requestDelete(row)"
-                            class="w-full px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-muted transition flex items-center gap-3"
-                          >
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M18 6 6 18"></path>
-                              <path d="M6 6l12 12"></path>
-                            </svg>
-                            Cancelar
-                          </button>
-                        </div>
-                      }
-                    </td>
+                    <td class="px-6 py-6"><div class="h-8 w-28 bg-muted rounded-full"></div></td>
+                    <td class="px-6 py-6"><div class="h-4 w-56 bg-muted rounded"></div></td>
+                    <td class="px-6 py-6 text-right"><div class="h-11 w-11 bg-muted rounded-2xl ml-auto"></div></td>
                   </tr>
                 }
-              }
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-primary/5 text-foreground">
+              <tr class="border-b border-border">
+                <th class="px-6 py-4 text-left font-semibold">Fecha</th>
+                <th class="px-6 py-4 text-left font-semibold">Hora</th>
+                <th class="px-6 py-4 text-left font-semibold">Paciente</th>
+                <th class="px-6 py-4 text-left font-semibold">Estado</th>
+                <th class="px-6 py-4 text-left font-semibold">Notas</th>
+                <th class="px-6 py-4 text-right font-semibold">Acciones</th>
+              </tr>
+              </thead>
+
+              <tbody class="divide-y divide-border">
+                @if (filteredRows.length === 0) {
+                  <tr>
+                    <td class="px-6 py-12 text-center text-muted-foreground" colspan="6">
+                      No hay resultados con esos filtros.
+                    </td>
+                  </tr>
+                } @else {
+                  @for (row of filteredRows; track row.id) {
+                    <tr class="bg-card">
+                      <td class="px-6 py-6">
+                        <div class="flex items-center gap-3">
+                          <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                               stroke-width="2">
+                            <path d="M8 2v4"></path>
+                            <path d="M16 2v4"></path>
+                            <path d="M3 10h18"></path>
+                            <path d="M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
+                          </svg>
+                          <span class="font-medium text-foreground">{{ formatDateES(row.date) }}</span>
+                        </div>
+                      </td>
+
+                      <td class="px-6 py-6">
+                        <div class="flex items-center gap-3">
+                          <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                               stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 6v6l4 2"></path>
+                          </svg>
+                          <span class="font-medium text-foreground">{{ row.time }}</span>
+                        </div>
+                      </td>
+
+                      <td class="px-6 py-6">
+                        <p class="font-semibold text-foreground">{{ row.patientName }}</p>
+                        <p class="text-sm text-muted-foreground">DNI: {{ row.dni }}</p>
+                      </td>
+
+                      <td class="px-6 py-6">
+                        <span
+                          class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold border"
+                          [ngClass]="{
+                            'bg-emerald-500/15 text-emerald-700 border-emerald-500/30': row.status === 'confirmed',
+                            'bg-amber-500/15 text-amber-700 border-amber-500/30': row.status === 'pending',
+                            'bg-destructive/15 text-destructive border-destructive/30': row.status === 'cancelled'
+                          }"
+                        >
+                          {{ row.status }}
+                        </span>
+                      </td>
+
+                      <td class="px-6 py-6">
+                        <span class="text-foreground" *ngIf="row.notes?.trim(); else noNotes">{{ row.notes }}</span>
+                        <ng-template #noNotes><span class="text-muted-foreground">—</span></ng-template>
+                      </td>
+
+                      <td class="px-6 py-6 text-right relative" data-popover>
+                        <button
+                          type="button"
+                          (click)="toggleRowMenu(row.id)"
+                          class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background hover:bg-muted transition"
+                          aria-label="Acciones"
+                        >
+                          <svg class="h-6 w-6 text-foreground" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="1.8"></circle>
+                            <circle cx="12" cy="12" r="1.8"></circle>
+                            <circle cx="12" cy="19" r="1.8"></circle>
+                          </svg>
+                        </button>
+
+                        @if (openRowMenuId === row.id) {
+                          <div
+                            class="absolute right-0 mt-3 w-56 rounded-2xl border border-border bg-card shadow-lg overflow-hidden z-50"
+                            data-popover
+                          >
+                            <button
+                              type="button"
+                              (click)="openDetailModal(row)"
+                              class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+                            >
+                              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none"
+                                   stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"></path>
+                              </svg>
+                              Ver detalles
+                            </button>
+
+                            <button
+                              type="button"
+                              (click)="openRescheduleModal(row)"
+                              class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+                            >
+                              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none"
+                                   stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 1 0 9-9"></path>
+                                <path d="M3 4v8h8"></path>
+                              </svg>
+                              Reprogramar
+                            </button>
+
+                            <div class="h-px bg-border"></div>
+
+                            <button
+                              type="button"
+                              (click)="requestDelete(row)"
+                              class="w-full px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-muted transition flex items-center gap-3"
+                            >
+                              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6 6 18"></path>
+                                <path d="M6 6l12 12"></path>
+                              </svg>
+                              Cancelar
+                            </button>
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </div>
     }
   </div>
 
-  <!-- =========================
-       MODAL: Nueva Cita
-       ========================= -->
+  <!-- ==========================================================
+       ✅ MODALES RESPONSIVE (TODOS)
+       - overlay con padding
+       - modal con max height y scroll interno
+       - botones apilados en mobile
+       ========================================================== -->
+
+  <!-- MODAL: Nueva Cita -->
   @if (isCreateModalOpen) {
     <div class="fixed inset-0 z-[60]" data-popover>
       <div class="absolute inset-0 bg-black/50" (click)="closeCreateModal()"></div>
 
-      <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden" (click)="$event.stopPropagation()">
-          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
-            <div>
-              <h2 class="text-xl font-semibold text-foreground">Nueva Cita</h2>
-              <p class="mt-1 text-muted-foreground">Programa una nueva cita para un paciente.</p>
+      <div class="absolute inset-0 flex items-end sm:items-center justify-center p-3 sm:p-4">
+        <div
+          class="
+            w-full max-w-2xl
+            rounded-3xl bg-card border border-border shadow-xl overflow-hidden
+            max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]
+            flex flex-col
+          "
+          (click)="$event.stopPropagation()"
+        >
+          <!-- header -->
+          <div class="flex items-start justify-between px-4 sm:px-7 py-5 sm:py-6 border-b border-border">
+            <div class="min-w-0">
+              <h2 class="text-lg sm:text-xl font-semibold text-foreground">Nueva Cita</h2>
+              <p class="mt-1 text-sm sm:text-base text-muted-foreground">
+                Programa una nueva cita para un paciente.
+              </p>
             </div>
 
             <button
               type="button"
               (click)="closeCreateModal()"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              class="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
               aria-label="Cerrar"
             >
               <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -394,9 +531,9 @@
             </button>
           </div>
 
-          <div class="px-7 py-6">
+          <!-- body (scroll) -->
+          <div class="px-4 sm:px-7 py-5 sm:py-6 overflow-y-auto">
             <div class="grid gap-5">
-              <!-- Paciente con dropdown -->
               <div class="relative" data-popover>
                 <label class="block text-sm font-semibold text-foreground mb-2">Paciente</label>
                 <input
@@ -490,11 +627,12 @@
             </div>
           </div>
 
-          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+          <!-- footer -->
+          <div class="px-4 sm:px-7 py-4 sm:py-6 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
             <button
               type="button"
               (click)="closeCreateModal()"
-              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+              class="h-12 w-full sm:w-auto rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
             >
               Cancelar
             </button>
@@ -502,7 +640,7 @@
             <button
               type="button"
               (click)="createAppointment()"
-              class="h-12 rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground"
+              class="h-12 w-full sm:w-auto rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-95 active:opacity-90"
             >
               Crear Cita
             </button>
@@ -512,22 +650,25 @@
     </div>
   }
 
-  <!-- =========================
-       MODAL: Detalles Cita
-       ========================= -->
+  <!-- MODAL: Detalles Cita -->
   @if (isDetailModalOpen) {
     <div class="fixed inset-0 z-[60]" data-popover>
       <div class="absolute inset-0 bg-black/20" (click)="closeDetailModal()"></div>
 
-      <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="absolute inset-0 flex items-end sm:items-center justify-center p-3 sm:p-4">
         <div
-          class="w-full max-w-2xl rounded-3xl bg-card border border-border shadow-xl overflow-hidden"
+          class="
+            w-full max-w-2xl
+            rounded-3xl bg-card border border-border shadow-xl overflow-hidden
+            max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]
+            flex flex-col
+          "
           (click)="$event.stopPropagation()"
         >
-          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
-            <div>
-              <h2 class="text-xl font-semibold text-foreground">Detalles de la cita</h2>
-              <p class="mt-1 text-muted-foreground">Información completa de la cita.</p>
+          <div class="flex items-start justify-between px-4 sm:px-7 py-5 sm:py-6 border-b border-border">
+            <div class="min-w-0">
+              <h2 class="text-lg sm:text-xl font-semibold text-foreground">Detalles de la cita</h2>
+              <p class="mt-1 text-sm sm:text-base text-muted-foreground">Información completa de la cita.</p>
 
               <p class="mt-2 text-xs text-muted-foreground">
                 ID:
@@ -538,7 +679,7 @@
             <button
               type="button"
               (click)="closeDetailModal()"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              class="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
               aria-label="Cerrar"
             >
               <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -549,7 +690,7 @@
             </button>
           </div>
 
-          <div class="px-7 py-6">
+          <div class="px-4 sm:px-7 py-5 sm:py-6 overflow-y-auto">
             <div class="grid gap-5">
               <div class="grid gap-5 sm:grid-cols-2">
                 <div class="rounded-2xl border border-border bg-background p-4">
@@ -593,11 +734,11 @@
             </div>
           </div>
 
-          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+          <div class="px-4 sm:px-7 py-4 sm:py-6 border-t border-border flex items-center justify-end gap-3">
             <button
               type="button"
               (click)="closeDetailModal()"
-              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+              class="h-12 w-full sm:w-auto rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
             >
               Cerrar
             </button>
@@ -607,23 +748,25 @@
     </div>
   }
 
-  <!-- =========================
-       MODAL: Reprogramar Cita
-       ========================= -->
+  <!-- MODAL: Reprogramar -->
   @if (isRescheduleModalOpen) {
     <div class="fixed inset-0 z-[60]" data-popover>
       <div class="absolute inset-0 bg-black/20" (click)="closeRescheduleModal()"></div>
 
-      <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="absolute inset-0 flex items-end sm:items-center justify-center p-3 sm:p-4">
         <div
-          class="w-full max-w-[520px] rounded-3xl bg-card border border-border shadow-xl overflow-hidden"
+          class="
+            w-full max-w-[520px]
+            rounded-3xl bg-card border border-border shadow-xl overflow-hidden
+            max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]
+            flex flex-col
+          "
           (click)="$event.stopPropagation()"
         >
-          <div class="flex items-start justify-between px-7 py-6 border-b border-border">
-            <div>
-              <h2 class="text-xl font-semibold text-foreground">Reprogramar Cita</h2>
-              <p class="mt-1 text-muted-foreground">Selecciona la nueva fecha y hora.</p>
-
+          <div class="flex items-start justify-between px-4 sm:px-7 py-5 sm:py-6 border-b border-border">
+            <div class="min-w-0">
+              <h2 class="text-lg sm:text-xl font-semibold text-foreground">Reprogramar Cita</h2>
+              <p class="mt-1 text-sm sm:text-base text-muted-foreground">Selecciona la nueva fecha y hora.</p>
               <p class="mt-2 text-xs text-muted-foreground">
                 ID:
                 <span class="font-semibold text-foreground">{{ rescheduleRow?.id || '—' }}</span>
@@ -633,7 +776,7 @@
             <button
               type="button"
               (click)="closeRescheduleModal()"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              class="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
               aria-label="Cerrar"
             >
               <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -644,7 +787,7 @@
             </button>
           </div>
 
-          <div class="px-7 py-6">
+          <div class="px-4 sm:px-7 py-5 sm:py-6 overflow-y-auto">
             <div class="grid gap-5">
               <div class="grid gap-5 sm:grid-cols-2">
                 <div>
@@ -678,11 +821,11 @@
             </div>
           </div>
 
-          <div class="px-7 py-6 border-t border-border flex items-center justify-end gap-3">
+          <div class="px-4 sm:px-7 py-4 sm:py-6 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
             <button
               type="button"
               (click)="closeRescheduleModal()"
-              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+              class="h-12 w-full sm:w-auto rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
             >
               Cancelar
             </button>
@@ -690,7 +833,7 @@
             <button
               type="button"
               (click)="saveReschedule()"
-              class="h-12 rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground"
+              class="h-12 w-full sm:w-auto rounded-2xl px-6 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-95 active:opacity-90"
             >
               Guardar Cambios
             </button>
@@ -700,28 +843,31 @@
     </div>
   }
 
-  <!-- =========================
-       MODAL: Confirmación Cancelar
-       ========================= -->
+  <!-- MODAL: Confirmación Cancelar -->
   @if (isConfirmDeleteOpen) {
     <div class="fixed inset-0 z-[70]">
       <div class="absolute inset-0 bg-black/30" (click)="closeConfirmDelete()"></div>
 
-      <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="absolute inset-0 flex items-end sm:items-center justify-center p-3 sm:p-4">
         <div
-          class="w-full max-w-[520px] rounded-3xl bg-card border border-border shadow-xl overflow-hidden"
+          class="
+            w-full max-w-[520px]
+            rounded-3xl bg-card border border-border shadow-xl overflow-hidden
+            max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]
+            flex flex-col
+          "
           (click)="$event.stopPropagation()"
         >
-          <div class="px-7 py-6 border-b border-border flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-xl font-semibold text-foreground">{{ confirmTitle }}</h2>
-              <p class="mt-1 text-muted-foreground">{{ confirmMessage }}</p>
+          <div class="px-4 sm:px-7 py-5 sm:py-6 border-b border-border flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <h2 class="text-lg sm:text-xl font-semibold text-foreground">{{ confirmTitle }}</h2>
+              <p class="mt-1 text-sm sm:text-base text-muted-foreground">{{ confirmMessage }}</p>
             </div>
 
             <button
               type="button"
               (click)="closeConfirmDelete()"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+              class="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
               aria-label="Cerrar"
             >
               <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -731,11 +877,11 @@
             </button>
           </div>
 
-          <div class="px-7 py-6 flex items-center justify-end gap-3">
+          <div class="px-4 sm:px-7 py-4 sm:py-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
             <button
               type="button"
               (click)="closeConfirmDelete()"
-              class="h-12 rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+              class="h-12 w-full sm:w-auto rounded-2xl px-6 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
             >
               No, volver
             </button>
@@ -743,7 +889,7 @@
             <button
               type="button"
               (click)="confirmDelete()"
-              class="h-12 rounded-2xl px-6 text-sm font-semibold bg-destructive text-destructive-foreground"
+              class="h-12 w-full sm:w-auto rounded-2xl px-6 text-sm font-semibold bg-destructive text-destructive-foreground hover:opacity-95 active:opacity-90"
             >
               Sí, cancelar
             </button>

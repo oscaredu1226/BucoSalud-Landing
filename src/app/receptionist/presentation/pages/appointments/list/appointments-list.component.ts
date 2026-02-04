@@ -60,6 +60,10 @@ export class AppointmentsListComponent implements OnInit {
   isLoading = false;
   hasError = false;
 
+  // ✅ Skeleton helpers (solo para template)
+  readonly skeletonRows = Array.from({ length: 6 });
+  readonly skeletonCards = Array.from({ length: 4 });
+
   // filtros
   q = '';
   status: 'all' | AppointmentStatus = 'all';
