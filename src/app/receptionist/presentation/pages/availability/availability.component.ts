@@ -7,6 +7,7 @@ import {
   DayKey,
   WorkingHours
 } from '../../../infrastructure/http/repositories/availability.http-repository';
+import {AvailabilityStore} from '../../../../shared/availability/availability.store';
 
 type DayAvailability = {
   key: DayKey;
@@ -37,7 +38,9 @@ export class AvailabilityComponent implements OnInit {
   constructor(
     private readonly toast: ToastService,
     private readonly availabilityRepo: AvailabilityHttpRepository,
-    private readonly cdr: ChangeDetectorRef
+    private readonly cdr: ChangeDetectorRef,
+    private readonly availabilityStore: AvailabilityStore
+
   ) {
     this.syncHourOptions();
   }
@@ -414,6 +417,8 @@ export class AvailabilityComponent implements OnInit {
       this.isSaving = false;
       this.cdr.detectChanges();
     }
+    await this.availabilityStore.refresh();
+
   }
 
   private dayToJson(key: DayKey) {

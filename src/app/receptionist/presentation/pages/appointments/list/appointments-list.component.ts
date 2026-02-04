@@ -94,7 +94,7 @@ export class AppointmentsListComponent implements OnInit {
   formHour: string = '';
   formNotes = '';
 
-  // base hours (fallback si no hay settings)
+  // base hours (fallback si no hay settings)  ✅ NO LO QUITÉ (fallback)
   readonly hours: string[] = this.buildHours(10, 18);
 
   // opciones filtradas
@@ -237,6 +237,52 @@ export class AppointmentsListComponent implements OnInit {
     if (!this.workingHours) return true; // fallback: permitir si no hay settings
     const key = this.dowKeyFromDate(dateIso);
     return !!this.workingHours[key]?.enabled;
+  }
+
+  // =========================
+  // ✅ NUEVO: generar horas base desde working_hours (sin tocar nada más)
+  // =========================
+  private parseHHmm(hhmm: string): { hh: number; mm: number } | null {
+    if (!hhmm || typeof hhmm !== 'string') return null;
+    const [hh, mm] = hhmm.split(':').map(Number);
+    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+    if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+    return { hh, mm };
+  }
+
+  private getWorkingHoursSlotsForDate(dateIso: string): string[] {
+    // si no hay settings, no rompas: usa fallback 10-18
+    if (!this.workingHours) return [...this.hours];
+
+    const key = this.dowKeyFromDate(dateIso);
+    const day = this.workingHours[key];
+
+    if (!day || !day.enabled) return [];
+
+    const start = this.parseHHmm(day.start);
+    const end = this.parseHHmm(day.end);
+    if (!start || !end) return [...this.hours];
+
+    const step = this.slotMinutes ?? 30;
+
+    const [y, m, d] = dateIso.split('-').map(Number);
+    const startLocal = new Date(y, m - 1, d, start.hh, start.mm, 0, 0);
+    const endBoundary = new Date(y, m - 1, d, end.hh, end.mm, 0, 0);
+
+    const out: string[] = [];
+
+    for (let cur = new Date(startLocal); ; cur = new Date(cur.getTime() + step * 60_000)) {
+      const slotStart = new Date(cur);
+      const slotEnd = new Date(slotStart.getTime() + step * 60_000);
+
+      if (slotEnd.getTime() > endBoundary.getTime()) break;
+
+      out.push(
+        `${String(slotStart.getHours()).padStart(2, '0')}:${String(slotStart.getMinutes()).padStart(2, '0')}`
+      );
+    }
+
+    return out;
   }
 
   // =========================
@@ -466,7 +512,9 @@ export class AppointmentsListComponent implements OnInit {
 
     this.rescheduleRow = row;
     this.rescheduleDate = row.date;
-    this.rescheduleTime = row.time || this.hours[0] || '10:00';
+
+    // ✅ NO CAMBIO TU LÓGICA: solo evito depender de this.hours si el día cambió.
+    this.rescheduleTime = row.time || '';
 
     await this.refreshRescheduleHourOptions(this.rescheduleDate);
 
@@ -674,7 +722,7 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // ✅ HORAS DISPONIBLES (incluye validación de día habilitado)
+  // ✅ HORAS DISPONIBLES (usa working_hours si existe)
   // =========================
   private async refreshCreateHourOptions(dateIso: string) {
     await this.ensureAvailabilityLoaded();
@@ -684,7 +732,6 @@ export class AppointmentsListComponent implements OnInit {
       return;
     }
 
-    // 🔥 si el día está deshabilitado: 0 horas
     if (!this.isDayEnabled(dateIso)) {
       this.createHourOptions = [];
       return;
@@ -694,7 +741,10 @@ export class AppointmentsListComponent implements OnInit {
 
     const duration = this.slotMinutes ?? 30;
 
-    this.createHourOptions = this.hours.filter((hhmm) => {
+    // ✅ CAMBIO MINIMO: horas base vienen de working_hours
+    const baseHours = this.getWorkingHoursSlotsForDate(dateIso);
+
+    this.createHourOptions = baseHours.filter((hhmm) => {
       const startIso = this.combineDateTimeISO(dateIso, hhmm);
       const endIso = this.addMinutesISO(startIso, duration);
       return this.isFreeLocal(dateIso, startIso, endIso, null);
@@ -721,7 +771,10 @@ export class AppointmentsListComponent implements OnInit {
     const duration = this.rescheduleRow?._durationMin ?? this.slotMinutes ?? 30;
     const ignoreId = this.rescheduleRow?.id ?? null;
 
-    this.rescheduleHourOptions = this.hours.filter((hhmm) => {
+    // ✅ CAMBIO MINIMO: horas base vienen de working_hours
+    const baseHours = this.getWorkingHoursSlotsForDate(dateIso);
+
+    this.rescheduleHourOptions = baseHours.filter((hhmm) => {
       const startIso = this.combineDateTimeISO(dateIso, hhmm);
       const endIso = this.addMinutesISO(startIso, duration);
       return this.isFreeLocal(dateIso, startIso, endIso, ignoreId);
@@ -749,14 +802,12 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   private async isRangeBlockedOrBusy(dateIso: string, startIso: string, endIso: string, ignoreAppointmentId: string | null) {
-    // 0) disponibilidad del día (seguridad extra)
     await this.ensureAvailabilityLoaded();
     if (!this.isDayEnabled(dateIso)) {
       this.toast.error('Día no disponible', 'Ese día está deshabilitado en disponibilidad');
       return true;
     }
 
-    // 1) bloqueos en server
     const { data: blocks, error: blockErr } = await this.apptRepo.listBlockedSlotsByRange(startIso, endIso, 50);
 
     if (blockErr) {
@@ -772,7 +823,6 @@ export class AppointmentsListComponent implements OnInit {
       return true;
     }
 
-    // 2) citas ocupadas (rows local)
     const busy = this.rows
       .filter((r) => r.date === dateIso)
       .filter((r) => r.status !== 'cancelled')
@@ -794,12 +844,10 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   private isFreeLocal(dateIso: string, startIso: string, endIso: string, ignoreAppointmentId: string | null): boolean {
-    // bloqueos del día (cache)
     const dayBlocks = this.blocksByDate.get(dateIso) ?? [];
     const isBlocked = dayBlocks.some((b) => this.overlaps(startIso, endIso, b.start_at, b.end_at));
     if (isBlocked) return false;
 
-    // citas ocupadas
     const isBusy = this.rows
       .filter((r) => r.date === dateIso)
       .filter((r) => r.status !== 'cancelled')
@@ -824,11 +872,7 @@ export class AppointmentsListComponent implements OnInit {
     return aStart < bEnd && aEnd > bStart;
   }
 
-  // =========================
-  // ✅ BLOQUEAR DÍA COMPLETO (helper listo para usar)
-  // =========================
   async blockAllDay(dateIso: string, reason?: string) {
-    // start/end en hora local, y luego ISO
     const startIso = this.combineDateTimeISO(dateIso, '00:00');
     const endIso = this.addMinutesISO(startIso, 24 * 60);
 
@@ -838,11 +882,9 @@ export class AppointmentsListComponent implements OnInit {
       return;
     }
 
-    // refresca cache de bloqueos del día
     this.blocksByDate.delete(dateIso);
     await this.ensureBlocksLoaded(dateIso);
 
-    // refresca combos si están en ese día
     if (this.isCreateModalOpen && this.formDate === dateIso) await this.refreshCreateHourOptions(dateIso);
     if (this.isRescheduleModalOpen && this.rescheduleDate === dateIso) await this.refreshRescheduleHourOptions(dateIso);
 
@@ -932,7 +974,6 @@ export class AppointmentsListComponent implements OnInit {
     return Math.max(1, Math.round((b - a) / 60000));
   }
 
-  // ✅ genera ISO desde fecha/hora LOCAL (esto es lo correcto)
   private combineDateTimeISO(date: string, time: string): string {
     const [y, m, d] = date.split('-').map(Number);
     const [hh, mm] = time.split(':').map(Number);

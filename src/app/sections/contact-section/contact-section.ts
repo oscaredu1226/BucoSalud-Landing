@@ -25,6 +25,9 @@ type ContactForm = {
   time: FormControl<string>; // HH:mm
 };
 
+type WorkingHourDay = { start: string; end: string; enabled: boolean };
+type WorkingHours = Record<'mon'|'tue'|'wed'|'thu'|'fri'|'sat'|'sun', WorkingHourDay>;
+
 @Component({
   selector: 'app-contact-section',
   standalone: true,
@@ -106,7 +109,6 @@ export class ContactSection {
       try {
         await this.loadAvailableHoursForDate(date);
       } catch (e: any) {
-        // si falla (RLS, etc.), queda vacío
         this.availableHours = [];
         this.submitError = e?.message ?? 'No se pudo cargar disponibilidad.';
       }
@@ -124,18 +126,60 @@ export class ContactSection {
   }
 
   // =========================
+  // helpers working_hours
+  // =========================
+  private parseHHmm(hhmm: string): { hh: number; mm: number } | null {
+    if (!hhmm || typeof hhmm !== 'string') return null;
+    const [hh, mm] = hhmm.split(':').map(Number);
+    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+    if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+    return { hh, mm };
+  }
+
+  private dowKeyFromDate(dateIso: string): keyof WorkingHours {
+    const d = new Date(dateIso + 'T00:00:00');
+    const dow = d.getDay(); // 0=Sun..6=Sat
+    const map: (keyof WorkingHours)[] = ['sun','mon','tue','wed','thu','fri','sat'];
+    return map[dow];
+  }
+
+  // =========================
   // DISPONIBILIDAD (como crear citas)
   // =========================
   private async loadAvailableHoursForDate(dateYYYYMMDD: string) {
     this.isLoadingHours = true;
 
     try {
-      // 1) slot_minutes
+      // 1) settings (slot + working_hours)
       const { data: settings, error: sErr } = await this.apptRepo.getAvailabilitySettings();
       if (sErr) throw sErr;
-      const slotMinutes = settings?.slot_minutes ?? 60;
 
-      // 2) rango del día en hora local -> ISO UTC
+      const slotMinutes = settings?.slot_minutes ?? 60;
+      const workingHours = (settings?.working_hours ?? null) as WorkingHours | null;
+
+      // 2) si no hay working_hours, no rompas: queda vacío (o si quieres, fallback)
+      if (!workingHours) {
+        this.availableHours = [];
+        return;
+      }
+
+      const key = this.dowKeyFromDate(dateYYYYMMDD);
+      const dayCfg = workingHours[key];
+
+      // 3) si el día está deshabilitado => 0 horas
+      if (!dayCfg || !dayCfg.enabled) {
+        this.availableHours = [];
+        return;
+      }
+
+      const start = this.parseHHmm(dayCfg.start);
+      const end = this.parseHHmm(dayCfg.end);
+      if (!start || !end) {
+        this.availableHours = [];
+        return;
+      }
+
+      // 4) rango del día en hora local -> ISO UTC
       const [y, m, d] = dateYYYYMMDD.split('-').map(Number);
       const dayStartLocal = new Date(y, m - 1, d, 0, 0, 0, 0);
       const dayEndLocal = new Date(y, m - 1, d, 23, 59, 59, 999);
@@ -143,7 +187,7 @@ export class ContactSection {
       const fromIso = dayStartLocal.toISOString();
       const toIso = dayEndLocal.toISOString();
 
-      // 3) traer citas y bloqueos del día
+      // 5) traer citas y bloqueos del día
       const [
         { data: appts, error: aErr },
         { data: blocks, error: bErr },
@@ -158,25 +202,22 @@ export class ContactSection {
       const appointments = appts ?? [];
       const blocked = blocks ?? [];
 
-      // 4) generar slots candidatos (por ahora fijo 10:00–18:00)
-      // (esto luego lo conectamos a working_hours si quieres)
-      const workStart = { hh: 10, mm: 0 };
-      const workEnd = { hh: 18, mm: 0 };
-
+      // 6) generar slots candidatos según working_hours
       const slots: { label: string; startIso: string; endIso: string }[] = [];
 
-      const start = new Date(y, m - 1, d, workStart.hh, workStart.mm, 0, 0);
-      const endBoundary = new Date(y, m - 1, d, workEnd.hh, workEnd.mm, 0, 0);
+      const workStartLocal = new Date(y, m - 1, d, start.hh, start.mm, 0, 0);
+      const workEndBoundary = new Date(y, m - 1, d, end.hh, end.mm, 0, 0);
 
       for (
-        let cursor = new Date(start);
+        let cursor = new Date(workStartLocal);
         ;
         cursor = new Date(cursor.getTime() + slotMinutes * 60_000)
       ) {
         const slotStart = new Date(cursor);
         const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60_000);
 
-        if (slotEnd.getTime() > endBoundary.getTime()) break;
+        // ✅ no permitas que el slot termine después del cierre
+        if (slotEnd.getTime() > workEndBoundary.getTime()) break;
 
         const label =
           `${String(slotStart.getHours()).padStart(2, '0')}:` +
@@ -189,13 +230,13 @@ export class ContactSection {
         });
       }
 
-      // 5) overlap helper
+      // 7) overlap helper
       const overlaps = (aStart: string, aEnd: string, bStart: string, bEnd: string) => {
         return new Date(aStart).getTime() < new Date(bEnd).getTime()
           && new Date(aEnd).getTime() > new Date(bStart).getTime();
       };
 
-      // 6) filtrar slots ocupados
+      // 8) filtrar slots ocupados por citas o bloqueos
       const free = slots.filter((slot) => {
         const occupiedByAppt = appointments.some((r: any) =>
           overlaps(r.start_at, r.end_at, slot.startIso, slot.endIso)
