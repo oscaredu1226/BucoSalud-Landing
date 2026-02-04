@@ -1,7 +1,10 @@
 import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { AppointmentHttpRepository, AppointmentRow } from '../../../infrastructure/http/repositories/appointment.http-repository';
+import {
+  AppointmentHttpRepository,
+  AppointmentRow
+} from '../../../infrastructure/http/repositories/appointment.http-repository';
 
 type AppointmentStatus = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada';
 
@@ -10,16 +13,16 @@ type AgendaAppointment = {
   patientName: string;
   phone: string;
   dni: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
+  date: string;
+  time: string;
   reason: string;
   status: AppointmentStatus;
 };
 
 type DayItem = {
-  date: string;      // YYYY-MM-DD
-  weekday: string;   // LUN, MAR...
-  day: string;       // 01..31
+  date: string;
+  weekday: string;
+  day: string;
 };
 
 @Component({
@@ -39,29 +42,28 @@ export class AgendaComponent implements OnInit {
 
   viewMode: 'day' | 'week' = 'day';
 
-  weekStartISO: string = this.startOfWeekISO(this.todayISO()); // lunes
+  weekStartISO: string = this.startOfWeekISO(this.todayISO());
   days: DayItem[] = this.buildWeekFromWeekStart(this.weekStartISO);
   selectedDate: string = this.todayISO();
 
   timeSlots: string[] = this.buildTimeSlots(8, 18);
 
-  // ✅ ahora viene de supabase
   appointments: AgendaAppointment[] = [];
 
-  /* ======================
-     INIT
-     ====================== */
+  // ✅ caches para render eficiente
+  private apptsByDate = new Map<string, AgendaAppointment[]>();
+  private slotMapForSelectedDate = new Map<string, AgendaAppointment>();
 
   async ngOnInit() {
     await this.loadWeekAppointments();
   }
+
 
   private async loadWeekAppointments() {
     this.isLoading = true;
     this.hasError = false;
     this.cdr.detectChanges();
 
-    // rango: [weekStart, weekStart+7)
     const fromIso = `${this.weekStartISO}T00:00:00.000Z`;
     const end = new Date(fromIso);
     end.setUTCDate(end.getUTCDate() + 7);
@@ -80,34 +82,45 @@ export class AgendaComponent implements OnInit {
     const rows = (data ?? []) as AppointmentRow[];
 
     this.appointments = rows.map((r: any) => this.toAgendaVM(r));
+    this.rebuildCaches();
     this.cdr.detectChanges();
   }
 
-  /* ======================
-     GETTERS
-     ====================== */
+  private rebuildCaches() {
+    this.apptsByDate.clear();
 
-  get dayAppointments(): AgendaAppointment[] {
-    return this.appointments
-      .filter(a => a.date === this.selectedDate)
-      .sort((a, b) => a.time.localeCompare(b.time));
+    for (const a of this.appointments) {
+      const list = this.apptsByDate.get(a.date) ?? [];
+      list.push(a);
+      this.apptsByDate.set(a.date, list);
+    }
+
+    for (const [date, list] of this.apptsByDate.entries()) {
+      list.sort((x, y) => x.time.localeCompare(y.time));
+      this.apptsByDate.set(date, list);
+    }
+
+    this.rebuildSlotMapForSelectedDate();
+  }
+
+  private rebuildSlotMapForSelectedDate() {
+    this.slotMapForSelectedDate.clear();
+    const list = this.apptsByDate.get(this.selectedDate) ?? [];
+    for (const a of list) this.slotMapForSelectedDate.set(a.time, a);
   }
 
   getAppointmentBySlot(time: string): AgendaAppointment | null {
-    for (const a of this.dayAppointments) {
-      if (a.time === time) return a;
-    }
-    return null;
+    return this.slotMapForSelectedDate.get(time) ?? null;
   }
 
   hasAppointmentsForDate(date: string): boolean {
-    for (const a of this.appointments) {
-      if (a.date === date) return true;
-    }
-    return false;
+    return (this.apptsByDate.get(date)?.length ?? 0) > 0;
   }
 
-  // ✅ label tipo "enero 20 – enero 26, 2026"
+  getAppointmentsForDate(date: string): AgendaAppointment[] {
+    return this.apptsByDate.get(date) ?? [];
+  }
+
   get weekLabel(): string {
     const start = new Date(this.weekStartISO + 'T00:00:00');
     const end = new Date(start);
@@ -116,51 +129,43 @@ export class AgendaComponent implements OnInit {
     const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
     const sameYear = start.getFullYear() === end.getFullYear();
 
-    const startLabel = start.toLocaleDateString('es-PE', { month: 'long', day: '2-digit' });
-    const endLabel = end.toLocaleDateString('es-PE', { month: 'long', day: '2-digit', year: 'numeric' });
-
     if (sameMonth && sameYear) {
-      // ej: "enero 20 – 26, 2026"
-      const startDay = start.toLocaleDateString('es-PE', { month: 'long', day: '2-digit' });
+      const startLabel = start.toLocaleDateString('es-PE', { month: 'long', day: '2-digit' });
       const endDay = end.toLocaleDateString('es-PE', { day: '2-digit' });
       const year = end.getFullYear();
-      return `${startDay} – ${endDay}, ${year}`;
+      return `${startLabel} – ${endDay}, ${year}`;
     }
 
     if (sameYear) {
-      // ej: "enero 28 – febrero 03, 2026"
-      const startLabel2 = start.toLocaleDateString('es-PE', { month: 'long', day: '2-digit' });
-      const endLabel2 = end.toLocaleDateString('es-PE', { month: 'long', day: '2-digit', year: 'numeric' });
-      return `${startLabel2} – ${endLabel2}`;
+      const startLabel = start.toLocaleDateString('es-PE', { month: 'long', day: '2-digit' });
+      const endLabel = end.toLocaleDateString('es-PE', { month: 'long', day: '2-digit', year: 'numeric' });
+      return `${startLabel} – ${endLabel}`;
     }
 
-    // ej: cruza año
-    const startLabel3 = start.toLocaleDateString('es-PE', { month: 'long', day: '2-digit', year: 'numeric' });
-    const endLabel3 = end.toLocaleDateString('es-PE', { month: 'long', day: '2-digit', year: 'numeric' });
-    return `${startLabel3} – ${endLabel3}`;
+    const startLabel = start.toLocaleDateString('es-PE', { month: 'long', day: '2-digit', year: 'numeric' });
+    const endLabel = end.toLocaleDateString('es-PE', { month: 'long', day: '2-digit', year: 'numeric' });
+    return `${startLabel} – ${endLabel}`;
   }
 
-  /* ======================
-     ACTIONS
-     ====================== */
 
   async selectDay(date: string) {
     this.selectedDate = date;
 
-    // ✅ si seleccionan un día fuera de la semana actual, saltamos a esa semana
     const w = this.startOfWeekISO(date);
     if (w !== this.weekStartISO) {
       this.weekStartISO = w;
       this.days = this.buildWeekFromWeekStart(this.weekStartISO);
       await this.loadWeekAppointments();
+      return;
     }
+
+    this.rebuildSlotMapForSelectedDate();
   }
 
   setView(mode: 'day' | 'week') {
     this.viewMode = mode;
   }
 
-  // ✅ navegación de semanas
   async prevWeek() {
     const d = new Date(this.weekStartISO + 'T00:00:00');
     d.setDate(d.getDate() - 7);
@@ -177,28 +182,17 @@ export class AgendaComponent implements OnInit {
     const today = this.todayISO();
     await this.setWeek(this.startOfWeekISO(today));
     this.selectedDate = today;
+    this.rebuildSlotMapForSelectedDate();
   }
 
   private async setWeek(weekStartISO: string) {
     this.weekStartISO = weekStartISO;
     this.days = this.buildWeekFromWeekStart(this.weekStartISO);
 
-    // ✅ si el selectedDate queda fuera, lo seteamos al primer día de la semana
     const inWeek = this.days.some(x => x.date === this.selectedDate);
     if (!inWeek) this.selectedDate = this.days[0]?.date ?? this.weekStartISO;
 
     await this.loadWeekAppointments();
-  }
-
-  // ✅ opcional: actualizar estado en DB (si quieres que sea real)
-  async confirm(a: AgendaAppointment) {
-    a.status = 'Confirmada';
-    await this.persistStatus(a.id, 'confirmed');
-  }
-
-  async cancel(a: AgendaAppointment) {
-    a.status = 'Cancelada';
-    await this.persistStatus(a.id, 'cancelled');
   }
 
   async complete(a: AgendaAppointment) {
@@ -207,17 +201,15 @@ export class AgendaComponent implements OnInit {
   }
 
   private async persistStatus(id: string, dbStatus: string) {
-    // no rompe tu UI: si falla, solo revierte recargando semana
     const { error } = await this.apptRepo.update(id, { status: dbStatus });
     if (error) {
       this.hasError = true;
       await this.loadWeekAppointments();
+    } else {
+      this.rebuildCaches();
+      this.cdr.detectChanges();
     }
   }
-
-  /* ======================
-     MAPPING (DB -> UI)
-     ====================== */
 
   private toAgendaVM(r: any): AgendaAppointment {
     const p = r.patient ?? null;
@@ -242,20 +234,10 @@ export class AgendaComponent implements OnInit {
 
   private mapDbStatusToUi(s: any): AppointmentStatus {
     const v = String(s ?? '').toLowerCase();
-
-    // tu enum real en DB: pending, confirmed, cancelled (y opcional completed)
     if (v === 'pending') return 'Pendiente';
     if (v === 'confirmed') return 'Confirmada';
     if (v === 'cancelled') return 'Cancelada';
     if (v === 'completed') return 'Completada';
-
-    // fallback por si ya viene en español
-    if (v === 'pendiente') return 'Pendiente';
-    if (v === 'confirmada') return 'Confirmada';
-    if (v === 'cancelada') return 'Cancelada';
-    if (v === 'completada') return 'Completada';
-
-    // default seguro
     return 'Confirmada';
   }
 
@@ -273,9 +255,6 @@ export class AgendaComponent implements OnInit {
     return { date: `${y}-${m}-${day}`, time: `${hh}:${mm}` };
   }
 
-  /* ======================
-     HELPERS
-     ====================== */
 
   private buildTimeSlots(from: number, to: number): string[] {
     const slots: string[] = [];
@@ -286,7 +265,6 @@ export class AgendaComponent implements OnInit {
     return slots;
   }
 
-  // ✅ semana desde lunes (weekStartISO)
   private buildWeekFromWeekStart(weekStartISO: string): DayItem[] {
     const base = new Date(weekStartISO + 'T00:00:00');
     const days: DayItem[] = [];
@@ -305,11 +283,10 @@ export class AgendaComponent implements OnInit {
     return days;
   }
 
-  // ✅ lunes como inicio de semana
   private startOfWeekISO(dateISO: string): string {
     const d = new Date(dateISO + 'T00:00:00');
-    const dow = d.getDay(); // 0=dom..6=sab
-    const diff = (dow === 0 ? -6 : 1 - dow); // mover a lunes
+    const dow = d.getDay();
+    const diff = (dow === 0 ? -6 : 1 - dow);
     d.setDate(d.getDate() + diff);
     return this.toISODate(d);
   }
