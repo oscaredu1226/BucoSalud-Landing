@@ -131,27 +131,28 @@
           }
         </nav>
 
-        <!-- Footer (SOLO CAMBIO: logout) -->
+        <!-- Footer (logout real) -->
         <div class="p-4 border-t border-border bg-background">
           <button
             type="button"
             (click)="logout()"
+            [disabled]="isLoggingOut"
             class="w-full inline-flex items-center justify-center gap-3 rounded-2xl border border-border bg-background
-                   px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted transition"
+                   px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted transition
+                   disabled:opacity-60"
           >
-            <!-- logout icon -->
             <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <path d="M16 17l5-5-5-5"></path>
               <path d="M21 12H9"></path>
             </svg>
-            Cerrar sesión
+            {{ isLoggingOut ? 'Cerrando...' : 'Cerrar sesión' }}
           </button>
         </div>
       </div>
     </aside>
 
-    <!-- Mobile drawer (fijo, NO TOCO NADA) -->
+    <!-- Mobile drawer -->
     <div class="fixed inset-0 z-50 lg:hidden" [class.pointer-events-none]="!isMobileMenuOpen">
       <div
         class="absolute inset-0 bg-black/40 transition-opacity"
@@ -165,43 +166,64 @@
         [class.-translate-x-full]="!isMobileMenuOpen"
         [class.translate-x-0]="isMobileMenuOpen"
       >
-        <div class="flex items-center justify-between px-4 py-4 border-b border-border">
-          <div class="flex items-center gap-2">
-            <div class="h-9 w-9 rounded-xl bg-primary"></div>
-            <div class="leading-tight">
-              <p class="text-sm font-semibold">Recepción</p>
-              <p class="text-xs text-muted-foreground">BucoPerú</p>
+        <div class="flex h-full flex-col">
+          <div class="flex items-center justify-between px-4 py-4 border-b border-border">
+            <div class="flex items-center gap-2">
+              <div class="h-9 w-9 rounded-xl bg-primary"></div>
+              <div class="leading-tight">
+                <p class="text-sm font-semibold">Recepción</p>
+                <p class="text-xs text-muted-foreground">BucoPerú</p>
+              </div>
             </div>
-          </div>
-          <button
-            type="button"
-            class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border hover:bg-muted transition"
-            (click)="closeMobileMenu()"
-            aria-label="Cerrar menú"
-          >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6 6 18"></path>
-              <path d="M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-
-        <nav class="px-3 py-3">
-          @for (item of nav; track item.path) {
-            <a
-              [routerLink]="item.path"
-              routerLinkActive="bg-primary text-primary-foreground"
-              [routerLinkActiveOptions]="{ exact: true }"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary-foreground/5 hover:text-foreground transition"
+            <button
+              type="button"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border hover:bg-muted transition"
               (click)="closeMobileMenu()"
+              aria-label="Cerrar menú"
             >
-              <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary-foreground/5 border border-secondary-foreground/10">
-                <span class="h-2 w-2 rounded-full bg-primary"></span>
-              </span>
-              <span class="font-medium">{{ item.label }}</span>
-            </a>
-          }
-        </nav>
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"></path>
+                <path d="M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <nav class="px-3 py-3 flex-1 overflow-auto">
+            @for (item of nav; track item.path) {
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="bg-primary text-primary-foreground"
+                [routerLinkActiveOptions]="{ exact: true }"
+                class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary-foreground/5 hover:text-foreground transition"
+                (click)="closeMobileMenu()"
+              >
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary-foreground/5 border border-secondary-foreground/10">
+                  <span class="h-2 w-2 rounded-full bg-primary"></span>
+                </span>
+                <span class="font-medium">{{ item.label }}</span>
+              </a>
+            }
+          </nav>
+
+          <!-- ✅ Logout también en mobile -->
+          <div class="p-4 border-t border-border bg-background">
+            <button
+              type="button"
+              (click)="logout()"
+              [disabled]="isLoggingOut"
+              class="w-full inline-flex items-center justify-center gap-3 rounded-2xl border border-border bg-background
+                     px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted transition
+                     disabled:opacity-60"
+            >
+              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <path d="M16 17l5-5-5-5"></path>
+                <path d="M21 12H9"></path>
+              </svg>
+              {{ isLoggingOut ? 'Cerrando...' : 'Cerrar sesión' }}
+            </button>
+          </div>
+        </div>
       </aside>
     </div>
 

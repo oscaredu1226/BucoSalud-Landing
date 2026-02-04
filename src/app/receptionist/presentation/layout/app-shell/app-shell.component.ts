@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { NgClass } from '@angular/common';
+import {supabase} from '../../../infrastructure/supabase/supabase.client';
 
 type NavItem = {
   label: string;
@@ -26,6 +27,7 @@ export class AppShellComponent {
   ];
 
   isMobileMenuOpen = false;
+  isLoggingOut = false;
 
   toggleMobileMenu() {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
@@ -35,9 +37,17 @@ export class AppShellComponent {
     this.isMobileMenuOpen = false;
   }
 
-  logout() {
-    // si luego metes auth real: aquí limpias token/session y rediriges
+  async logout() {
+    if (this.isLoggingOut) return;
+    this.isLoggingOut = true;
+
     this.closeMobileMenu();
-    this.router.navigate(['/login']);
+
+    try {
+      const { error } = await supabase.auth.signOut();
+    } finally {
+      this.isLoggingOut = false;
+      await this.router.navigate(['/login']);
+    }
   }
 }
