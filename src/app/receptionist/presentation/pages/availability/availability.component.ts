@@ -7,23 +7,23 @@ import {
   DayKey,
   WorkingHours
 } from '../../../infrastructure/http/repositories/availability.http-repository';
-import {AvailabilityStore} from '../../../../shared/availability/availability.store';
+import { AvailabilityStore } from '../../../../shared/availability/availability.store';
 
 type DayAvailability = {
   key: DayKey;
   label: string;
   enabled: boolean;
-  start: string; // "HH:mm"
-  end: string;   // "HH:mm"
+  start: string;
+  end: string;
 };
 
 type BlockRow = {
   id: string;
-  date: string;   // "YYYY-MM-DD"
-  start: string;  // "HH:mm"
-  end: string;    // "HH:mm"
+  date: string;
+  start: string;
+  end: string;
   reason: string;
-  isAllDay: boolean; // ✅ nuevo (solo UI)
+  isAllDay: boolean;
 };
 
 type SlotSize = 15 | 30 | 45 | 60;
@@ -40,25 +40,24 @@ export class AvailabilityComponent implements OnInit {
     private readonly availabilityRepo: AvailabilityHttpRepository,
     private readonly cdr: ChangeDetectorRef,
     private readonly availabilityStore: AvailabilityStore
-
   ) {
     this.syncHourOptions();
   }
 
-  // UI state
   isSaving = false;
   isLoading = false;
   hasError = false;
 
-  // ✅ Settings row cache
   private settingsId: string | null = null;
   private timezone: string | null = null;
 
-  // Duración de citas
+  readonly skeletonDayRows = Array.from({ length: 7 });
+  readonly skeletonBlockRows = Array.from({ length: 6 });
+  readonly skeletonMobileCards = Array.from({ length: 6 });
+
   slotSize: SlotSize = 30;
   slotOptions: SlotSize[] = [15, 30, 45, 60];
 
-  // Horarios por día
   days: DayAvailability[] = [
     { key: 'sun', label: 'Domingo', enabled: false, start: '08:00', end: '18:00' },
     { key: 'mon', label: 'Lunes', enabled: true, start: '08:00', end: '18:00' },
@@ -69,32 +68,28 @@ export class AvailabilityComponent implements OnInit {
     { key: 'sat', label: 'Sábado', enabled: false, start: '08:00', end: '14:00' },
   ];
 
-  // Opciones hora para selects
   hourOptions: string[] = [];
 
-  // Bloqueos (se cargan desde supabase)
   blocks: BlockRow[] = [];
 
-  // Modal Agregar Bloqueo
   isBlockModalOpen = false;
   blockDraftDate = '';
   blockDraftStart = '13:00';
   blockDraftEnd = '14:00';
   blockDraftReason = '';
-
-  // ✅ NUEVO: bloquear día completo
   blockDraftAllDay = false;
 
-  // ✅ Modal confirmación eliminar bloqueo
   isConfirmDeleteOpen = false;
   pendingDelete: BlockRow | null = null;
   confirmTitle = 'Eliminar bloqueo';
   confirmMessage = '¿Seguro que deseas eliminar este bloqueo?';
 
-  // =========================
-  // INIT
-  // =========================
+
   async ngOnInit() {
+    await this.loadAll();
+  }
+
+  async retry() {
     await this.loadAll();
   }
 
@@ -127,17 +122,12 @@ export class AvailabilityComponent implements OnInit {
 
       const settings = (settingsRes as any)?.data ?? null;
 
-      // ✅ settings
       if (settings) {
         this.settingsId = settings.id ?? null;
         this.timezone = settings.timezone ?? null;
 
         const slot = Number(settings.slot_minutes ?? 30);
-        if (this.slotOptions.includes(slot as any)) {
-          this.slotSize = slot as SlotSize;
-        } else {
-          this.slotSize = 30;
-        }
+        this.slotSize = (this.slotOptions.includes(slot as any) ? (slot as SlotSize) : 30);
 
         this.syncHourOptions();
 
@@ -161,13 +151,11 @@ export class AvailabilityComponent implements OnInit {
         this.syncHourOptions();
       }
 
-      // ✅ blocks
       const dbBlocks = (blocksRes as any)?.data ?? [];
       this.blocks = dbBlocks.map((b: any) => {
         const { date, time } = this.splitDateTimeLocal(b.start_at);
         const { date: endDate, time: endTime } = this.splitDateTimeLocal(b.end_at);
 
-        // ✅ Detectar "todo el día": 00:00 -> 00:00 del día siguiente
         const isAllDay =
           time === '00:00' &&
           endTime === '00:00' &&
@@ -194,9 +182,6 @@ export class AvailabilityComponent implements OnInit {
     }
   }
 
-  // =========================
-  // Horario de atención
-  // =========================
   toggleDay(d: DayAvailability) {
     d.enabled = !d.enabled;
     this.toast.info('Horario', `${d.label}: ${d.enabled ? 'Activado' : 'Desactivado'}`);
@@ -213,9 +198,6 @@ export class AvailabilityComponent implements OnInit {
     this.hourOptions = this.buildTimeOptions(this.slotSize);
   }
 
-  // =========================
-  // Bloqueos
-  // =========================
   openBlockModal() {
     this.isBlockModalOpen = true;
 
@@ -240,7 +222,6 @@ export class AvailabilityComponent implements OnInit {
   onToggleAllDay() {
     this.blockDraftAllDay = !this.blockDraftAllDay;
 
-    // si activas todo el día, forzamos un rango "completo" en UI (solo visual)
     if (this.blockDraftAllDay) {
       this.blockDraftStart = '00:00';
       this.blockDraftEnd = '23:59';
@@ -258,7 +239,6 @@ export class AvailabilityComponent implements OnInit {
       return;
     }
 
-    // ✅ Si no es todo el día, validamos horas normal
     if (!this.blockDraftAllDay) {
       if (!this.blockDraftStart || !this.blockDraftEnd) {
         this.toast.error('Campos incompletos', 'Selecciona hora de inicio y fin');
@@ -270,12 +250,10 @@ export class AvailabilityComponent implements OnInit {
       }
     }
 
-    // ✅ RANGO FINAL A GUARDAR
     let startAtIso = '';
     let endAtIso = '';
 
     if (this.blockDraftAllDay) {
-      // día completo: 00:00 -> 00:00 del día siguiente (EN HORA LOCAL)
       startAtIso = this.combineDateTimeISO(this.blockDraftDate, '00:00');
       endAtIso = this.addDaysISO(startAtIso, 1);
     } else {
@@ -303,7 +281,7 @@ export class AvailabilityComponent implements OnInit {
         id: (data as any).id,
         date: this.blockDraftDate,
         start: this.blockDraftAllDay ? '00:00' : this.blockDraftStart,
-        end: this.blockDraftAllDay ? '00:00' : this.blockDraftEnd, // ✅ en tabla mostramos 00:00 para all-day
+        end: this.blockDraftAllDay ? '00:00' : this.blockDraftEnd,
         reason: (data as any).reason ?? (this.blockDraftAllDay ? 'Bloqueo día completo' : 'Bloqueo'),
         isAllDay: this.blockDraftAllDay,
       };
@@ -372,9 +350,6 @@ export class AvailabilityComponent implements OnInit {
     }
   }
 
-  // =========================
-  // SAVE (REAL)
-  // =========================
   async save() {
     try {
       this.isSaving = true;
@@ -417,8 +392,8 @@ export class AvailabilityComponent implements OnInit {
       this.isSaving = false;
       this.cdr.detectChanges();
     }
-    await this.availabilityStore.refresh();
 
+    await this.availabilityStore.refresh();
   }
 
   private dayToJson(key: DayKey) {
@@ -430,9 +405,6 @@ export class AvailabilityComponent implements OnInit {
     };
   }
 
-  // =========================
-  // Helpers UI
-  // =========================
   formatDateESLong(iso: string): string {
     if (!iso || iso.length < 10) return iso;
     const dt = new Date(iso + 'T00:00:00');
@@ -506,7 +478,6 @@ export class AvailabilityComponent implements OnInit {
   }
 
   private isNextDay(a: string, b: string): boolean {
-    // b == a + 1 día
     const da = new Date(a + 'T00:00:00');
     const db = new Date(b + 'T00:00:00');
     const diff = (db.getTime() - da.getTime()) / 86400000;
@@ -550,9 +521,9 @@ export class AvailabilityComponent implements OnInit {
     return out as WorkingHours;
   }
 
-  // ✅ ESC cierra confirmación
   @HostListener('document:keydown.escape')
   onEsc() {
     if (this.isConfirmDeleteOpen) this.closeConfirmDelete();
+    if (this.isBlockModalOpen) this.closeBlockModal();
   }
 }
