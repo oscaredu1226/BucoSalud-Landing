@@ -1,15 +1,12 @@
 <section id="equipo" class="py-20 md:py-28 bg-[hsl(var(--primary-soft))]">
   <div class="container mx-auto px-4 sm:px-6">
+
     <!-- Section Header -->
     <div class="text-center max-w-2xl mx-auto mb-16">
-      <span class="text-primary font-medium text-sm uppercase tracking-wider">
-        Nuestro equipo
-      </span>
-
+      <span class="text-primary font-medium text-sm uppercase tracking-wider">Nuestro equipo</span>
       <h2 class="font-heading text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground mt-3 mb-5">
         Especialistas en rehabilitación bucomaxilofacial
       </h2>
-
       <p class="text-muted-foreground text-lg leading-relaxed">
         Equipo interdisciplinario con experiencia clínica y acompañamiento humano para el paciente oncológico
         de cabeza y cuello en cada etapa del tratamiento.
@@ -19,37 +16,90 @@
     <!-- Team Grid -->
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       @for (member of team; track member.name) {
-        <div
-          class="group bg-card rounded-xl p-6 shadow-card hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border border-border text-center"
+
+        <!-- WRAPPER (perspective) -->
+        <button
+          type="button"
+          class="text-left group [perspective:1200px]"
+          (click)="toggle(member)"
+          [attr.aria-label]="'Ver información de ' + member.name"
+          [attr.aria-pressed]="isFlipped(member)"
         >
-          <!-- Avatar (Accessible) -->
+          <!-- FLIP CONTAINER -->
           <div
-            class="w-24 h-24 rounded-full bg-gradient-to-br from-secondary to-primary mx-auto mb-5 flex items-center justify-center shadow-md"
-            role="img"
-            [attr.aria-label]="'Foto referencial de ' + member.name"
+            class="relative h-[420px] w-full transition-transform duration-500 [transform-style:preserve-3d]"
+            [class.[transform:rotateY(180deg)]]="isFlipped(member)"
           >
-            <span class="text-2xl font-heading font-semibold text-primary-foreground" aria-hidden="true">
-              {{ member.initials }}
-            </span>
+            <!-- FRONT -->
+            <div class="absolute inset-0 rounded-2xl overflow-hidden shadow-card border border-border bg-card [backface-visibility:hidden]">
+              <!-- Imagen grande -->
+              <img
+                class="h-full w-full object-cover"
+                [src]="member.photo"
+                [alt]="'Foto de ' + member.name"
+                loading="lazy"
+              />
+
+              <!-- Overlay inferior -->
+              <div class="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                <h3 class="font-heading text-xl font-semibold text-white leading-snug">
+                  {{ member.name }}
+                </h3>
+                <p class="text-white/90 text-sm mt-1">
+                  {{ member.expertise }}
+                </p>
+              </div>
+
+              <!-- Hint -->
+              <div class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/50 text-white text-xs">
+                Conoce a tu Doctora
+              </div>
+            </div>
+
+            <!-- BACK -->
+            <div
+              class="absolute inset-0 rounded-2xl overflow-hidden shadow-card border border-border bg-card p-6
+                     [transform:rotateY(180deg)] [backface-visibility:hidden]"
+            >
+              <div class="flex items-start gap-4">
+                <img
+                  class="h-16 w-16 rounded-xl object-cover border border-border"
+                  [src]="member.photo"
+                  [alt]="'Foto de ' + member.name"
+                  loading="lazy"
+                />
+                <div>
+                  <h3 class="font-heading text-lg font-semibold text-foreground">
+                    {{ member.name }}
+                  </h3>
+                  <p class="text-primary font-medium text-sm">
+                    {{ member.role }}
+                  </p>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    {{ member.expertise }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-5">
+                <p class="text-muted-foreground text-sm leading-relaxed">
+                  {{ member.bio }}
+                </p>
+              </div>
+
+              <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs text-muted-foreground">
+                  Click para volver
+                </span>
+                <span class="text-xs px-2.5 py-1 rounded-full bg-muted text-foreground border border-border">
+                  Detalles
+                </span>
+              </div>
+            </div>
+
           </div>
+        </button>
 
-          <!-- Info -->
-          <h3 class="font-heading text-xl font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-            {{ member.name }}
-          </h3>
-
-          <p class="text-primary font-medium text-sm mb-3">
-            {{ member.role }}
-          </p>
-
-          <p class="text-xs text-muted-foreground mb-4 px-2 py-1.5 bg-muted rounded-full inline-block">
-            {{ member.expertise }}
-          </p>
-
-          <p class="text-muted-foreground text-sm leading-relaxed">
-            {{ member.bio }}
-          </p>
-        </div>
       }
     </div>
   </div>
