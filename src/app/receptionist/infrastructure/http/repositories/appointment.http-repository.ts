@@ -118,30 +118,30 @@ export class AppointmentHttpRepository {
       `)
       .maybeSingle();
   }
-
   async update(id: string, payload: any) {
     return await supabase
       .from('appointments')
       .upsert({ id, ...payload }, { onConflict: 'id' })
       .select(`
+      id,
+      patient_id,
+      start_at,
+      end_at,
+      status,
+      notes,
+      created_at,
+      updated_at,
+      patient:patients (
         id,
-        patient_id,
-        start_at,
-        end_at,
-        status,
-        notes,
-        created_at,
-        updated_at,
-        patient:patients (
-          id,
-          first_names,
-          last_names,
-          dni,
-          phone
-        )
-      `)
+        first_names,
+        last_names,
+        dni,
+        phone
+      )
+    `)
       .single();
   }
+
 
   async remove(id: string) {
     return await supabase.from('appointments').delete().eq('id', id);
@@ -156,8 +156,6 @@ export class AppointmentHttpRepository {
       .limit(limit);
   }
 
-  // ✅ NUEVO: Validar si hay alguna cita que se cruce con el rango
-  // overlap: existing.start_at < endIso AND existing.end_at > startIso
   async hasOverlappingAppointment(startIso: string, endIso: string) {
     return await supabase
       .from('appointments')
@@ -199,7 +197,6 @@ export class AppointmentHttpRepository {
       .returns<BlockedSlotRow>();
   }
 
-  // ✅ Bloquear día completo (te paso start/end ya calculados en el componente)
   async createBlockedSlotAllDay(startIso: string, endIso: string, reason?: string | null) {
     return await this.createBlockedSlot({
       start_at: startIso,

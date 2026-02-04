@@ -534,9 +534,11 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
 
     const { error } = await this.apptRepo.update(id, {
+      patient_id: this.rescheduleRow.patientId,
       start_at: startAtIso,
       end_at: endAtIso,
     });
+
 
     this.isLoading = false;
 
