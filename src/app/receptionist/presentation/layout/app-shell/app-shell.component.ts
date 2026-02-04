@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
+import { Component, OnDestroy } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet, NavigationStart } from '@angular/router';
 import { NgClass } from '@angular/common';
-import {supabase} from '../../../infrastructure/supabase/supabase.client';
+import { supabase } from '../../../infrastructure/supabase/supabase.client';
+import { filter, Subscription } from 'rxjs';
 
 type NavItem = {
   label: string;
@@ -15,8 +16,25 @@ type NavItem = {
   imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass],
   templateUrl: './app-shell.component.html',
 })
-export class AppShellComponent {
-  constructor(private readonly router: Router) {}
+export class AppShellComponent implements OnDestroy {
+  private readonly sub = new Subscription();
+
+  constructor(private readonly router: Router) {
+    this.sub.add(
+      this.router.events
+        .pipe(filter((e) => e instanceof NavigationStart))
+        .subscribe(() => this.closeMobileMenu())
+    );
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && this.isMobileMenuOpen) this.closeMobileMenu();
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    this.sub.add({
+      unsubscribe: () => window.removeEventListener('keydown', onKeyDown),
+    });
+  }
 
   readonly nav: NavItem[] = [
     { label: 'Dashboard', path: '/receptionist/dashboard', icon: 'dashboard' },
@@ -30,11 +48,21 @@ export class AppShellComponent {
   isLoggingOut = false;
 
   toggleMobileMenu() {
-    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    this.isMobileMenuOpen ? this.closeMobileMenu() : this.openMobileMenu();
+  }
+
+  openMobileMenu() {
+    this.isMobileMenuOpen = true;
+    this.lockBodyScroll(true);
   }
 
   closeMobileMenu() {
     this.isMobileMenuOpen = false;
+    this.lockBodyScroll(false);
+  }
+
+  private lockBodyScroll(lock: boolean) {
+    document.body.style.overflow = lock ? 'hidden' : '';
   }
 
   async logout() {
@@ -44,10 +72,15 @@ export class AppShellComponent {
     this.closeMobileMenu();
 
     try {
-      const { error } = await supabase.auth.signOut();
+      await supabase.auth.signOut();
     } finally {
       this.isLoggingOut = false;
       await this.router.navigate(['/login']);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.lockBodyScroll(false);
+    this.sub.unsubscribe();
   }
 }
