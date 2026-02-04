@@ -28,6 +28,11 @@ export class DashboardComponent implements OnInit {
   isLoading = false;
   hasError = false;
 
+  // ✅ skeleton helpers
+  readonly skeletonKpis = Array.from({ length: 4 });
+  readonly skeletonRows = Array.from({ length: 6 });
+  readonly skeletonCards = Array.from({ length: 5 });
+
   todayLabel = this.buildTodayLabelES();
 
   kpis: Kpi[] = [
@@ -46,77 +51,63 @@ export class DashboardComponent implements OnInit {
     await this.loadDashboard();
   }
 
-  private async loadDashboard() {
-    this.isLoading = true;
-    this.hasError = false;
-    this.cdr.detectChanges();
-
-    // ===== 1) PACIENTES
-    const { data: patients, error: pErr } = await this.patientsRepo.list(5000);
-    if (pErr) {
-      this.hasError = true;
-      this.isLoading = false;
-      this.cdr.detectChanges();
-      return;
-    }
-    const patientsCount = (patients ?? []).length;
-
-    // ===== 2) CITAS HOY (inicio/fin del día LOCAL -> convertir a UTC ISO)
-    const nowLocal = new Date();
-
-    const fromLocal = new Date(
-      nowLocal.getFullYear(),
-      nowLocal.getMonth(),
-      nowLocal.getDate(),
-      0, 0, 0, 0
-    );
-
-    const toLocal = new Date(
-      nowLocal.getFullYear(),
-      nowLocal.getMonth(),
-      nowLocal.getDate(),
-      23, 59, 59, 999
-    );
-
-    const fromIso = fromLocal.toISOString(); // UTC ISO (correcto para timestamptz)
-    const toIso = toLocal.toISOString();     // UTC ISO (correcto para timestamptz)
-
-    const { data: todayAppts, error: aErr } = await this.apptRepo.listByDateRange(fromIso, toIso, 5000);
-    if (aErr) {
-      this.hasError = true;
-      this.isLoading = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    const todayRows = (todayAppts ?? []) as any[];
-
-    // ===== 3) PROXIMA CITA (desde ahora)
-    const allForScan = todayRows;
-    const nextAppt = this.findNextAppointment(allForScan, new Date());
-
-    // ===== 4) LLENAR TABLA (hoy)
-    this.recent = todayRows
-      .map((r) => this.toRecentVM(r))
-      .sort((a, b) => a.time.localeCompare(b.time));
-
-    // ===== 5) KPIS
-    const citasHoy = String(todayRows.length);
-
-    const proximaValue = nextAppt ? nextAppt.time : '—';
-    const proximaHelper = nextAppt ? nextAppt.patient : 'Sin próximas';
-
-    this.kpis = [
-      { label: 'Citas hoy', value: citasHoy, helper: 'Programadas' },
-      { label: 'Próxima cita', value: proximaValue, helper: proximaHelper },
-      { label: 'Pacientes', value: String(patientsCount), helper: 'Registrados' },
-      { label: 'Disponibilidad', value: 'Activa', helper: 'Hoy 10:00–18:00' },
-    ];
-
-    this.isLoading = false;
-    this.cdr.detectChanges();
+  async retry() {
+    await this.loadDashboard();
   }
 
+  private async loadDashboard() {
+    try {
+      this.isLoading = true;
+      this.hasError = false;
+      this.cdr.detectChanges();
+
+      // ===== 1) PACIENTES
+      const { data: patients, error: pErr } = await this.patientsRepo.list(5000);
+      if (pErr) throw pErr;
+      const patientsCount = (patients ?? []).length;
+
+      // ===== 2) CITAS HOY (rango local → UTC)
+      const nowLocal = new Date();
+      const fromLocal = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate(), 0, 0, 0, 0);
+      const toLocal = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate(), 23, 59, 59, 999);
+
+      const { data: todayAppts, error: aErr } =
+        await this.apptRepo.listByDateRange(fromLocal.toISOString(), toLocal.toISOString(), 5000);
+      if (aErr) throw aErr;
+
+      const todayRows = (todayAppts ?? []) as any[];
+
+      // ===== 3) PRÓXIMA CITA
+      const nextAppt = this.findNextAppointment(todayRows, new Date());
+
+      // ===== 4) TABLA
+      this.recent = todayRows
+        .map((r) => this.toRecentVM(r))
+        .sort((a, b) => a.time.localeCompare(b.time));
+
+      // ===== 5) KPIS
+      this.kpis = [
+        { label: 'Citas hoy', value: String(todayRows.length), helper: 'Programadas' },
+        {
+          label: 'Próxima cita',
+          value: nextAppt ? nextAppt.time : '—',
+          helper: nextAppt ? nextAppt.patient : 'Sin próximas',
+        },
+        { label: 'Pacientes', value: String(patientsCount), helper: 'Registrados' },
+        { label: 'Disponibilidad', value: 'Activa', helper: 'Hoy 10:00–18:00' },
+      ];
+
+    } catch {
+      this.hasError = true;
+    } finally {
+      this.isLoading = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // =========================
+  // HELPERS
+  // =========================
   private findNextAppointment(rows: any[], now: Date): { time: string; patient: string } | null {
     let best: { startsAt: number; time: string; patient: string } | null = null;
 
@@ -125,8 +116,7 @@ export class DashboardComponent implements OnInit {
       if (!startIso) continue;
 
       const d = new Date(startIso);
-      if (Number.isNaN(d.getTime())) continue;
-      if (d.getTime() < now.getTime()) continue;
+      if (Number.isNaN(d.getTime()) || d.getTime() < now.getTime()) continue;
 
       const patientName = this.patientNameFromRow(r);
       const time = this.timeFromISO(startIso);
@@ -136,8 +126,7 @@ export class DashboardComponent implements OnInit {
       }
     }
 
-    if (!best) return null;
-    return { time: best.time, patient: best.patient };
+    return best ? { time: best.time, patient: best.patient } : null;
   }
 
   private toRecentVM(r: any): RecentAppointment {
@@ -159,23 +148,15 @@ export class DashboardComponent implements OnInit {
   private timeFromISO(iso: string): string {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '00:00';
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm}`;
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
 
   private mapDbStatusToUi(s: any): 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada' {
     const v = String(s ?? '').toLowerCase();
-    if (v === 'pending') return 'Pendiente';
-    if (v === 'confirmed') return 'Confirmada';
-    if (v === 'cancelled') return 'Cancelada';
-    if (v === 'completed') return 'Completada';
-
-    if (v === 'pendiente') return 'Pendiente';
-    if (v === 'confirmada') return 'Confirmada';
-    if (v === 'cancelada') return 'Cancelada';
-    if (v === 'completada') return 'Completada';
-
+    if (v === 'pending' || v === 'pendiente') return 'Pendiente';
+    if (v === 'confirmed' || v === 'confirmada') return 'Confirmada';
+    if (v === 'cancelled' || v === 'cancelada') return 'Cancelada';
+    if (v === 'completed' || v === 'completada') return 'Completada';
     return 'Confirmada';
   }
 
@@ -184,20 +165,7 @@ export class DashboardComponent implements OnInit {
     const weekday = d.toLocaleDateString('es-PE', { weekday: 'long' });
     const day = d.toLocaleDateString('es-PE', { day: '2-digit' });
     const month = d.toLocaleDateString('es-PE', { month: 'long' });
-
     const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
     return `${cap(weekday)}, ${day} de ${cap(month)}`;
-  }
-
-  // Ya no necesitas todayISO/toISODate para el rango "hoy".
-  private todayISO(): string {
-    return this.toISODate(new Date());
-  }
-
-  private toISODate(d: Date): string {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
   }
 }
