@@ -310,7 +310,7 @@
         }
       </div>
 
-      <!-- ✅ DESKTOP: tabla (hidden lg:block) -->
+      <!-- ✅ DESKTOP: tabla -->
       <div class="mt-8 hidden lg:block bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         @if (isLoading) {
           <div class="overflow-x-auto">
@@ -414,10 +414,11 @@
                         <ng-template #noNotes><span class="text-muted-foreground">—</span></ng-template>
                       </td>
 
-                      <td class="px-6 py-6 text-right relative" data-popover>
+                      <!-- ✅ Acciones: solo botón (el menú ya NO vive aquí) -->
+                      <td class="px-6 py-6 text-right" data-popover>
                         <button
                           type="button"
-                          (click)="toggleRowMenu(row.id)"
+                          (click)="toggleRowMenu(row, $event)"
                           class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background hover:bg-muted transition"
                           aria-label="Acciones"
                         >
@@ -427,53 +428,6 @@
                             <circle cx="12" cy="19" r="1.8"></circle>
                           </svg>
                         </button>
-
-                        @if (openRowMenuId === row.id) {
-                          <div
-                            class="absolute right-0 mt-3 w-56 rounded-2xl border border-border bg-card shadow-lg overflow-hidden z-50"
-                            data-popover
-                          >
-                            <button
-                              type="button"
-                              (click)="openDetailModal(row)"
-                              class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
-                            >
-                              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none"
-                                   stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"></path>
-                              </svg>
-                              Ver detalles
-                            </button>
-
-                            <button
-                              type="button"
-                              (click)="openRescheduleModal(row)"
-                              class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
-                            >
-                              <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none"
-                                   stroke="currentColor" stroke-width="2">
-                                <path d="M3 12a9 9 0 1 0 9-9"></path>
-                                <path d="M3 4v8h8"></path>
-                              </svg>
-                              Reprogramar
-                            </button>
-
-                            <div class="h-px bg-border"></div>
-
-                            <button
-                              type="button"
-                              (click)="requestDelete(row)"
-                              class="w-full px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-muted transition flex items-center gap-3"
-                            >
-                              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M18 6 6 18"></path>
-                                <path d="M6 6l12 12"></path>
-                              </svg>
-                              Cancelar
-                            </button>
-                          </div>
-                        }
                       </td>
                     </tr>
                   }
@@ -486,11 +440,58 @@
     }
   </div>
 
+  <!-- ✅ Dropdown FIXED (teleport) - por encima de TODO -->
+  @if (openRowMenuId && menuAppointment) {
+    <div
+      class="fixed z-[9999] w-56 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
+      [style.top.px]="menuPos.top"
+      [style.left.px]="menuPos.left"
+      data-popover
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        (click)="openDetailModal(menuAppointment!)"
+        class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+      >
+        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"></path>
+        </svg>
+        Ver detalles
+      </button>
+
+      <button
+        type="button"
+        (click)="openRescheduleModal(menuAppointment!)"
+        class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
+      >
+        <!-- ✅ reloj -->
+        <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 6v6l4 2"></path>
+        </svg>
+        Reprogramar
+      </button>
+
+      <div class="h-px bg-border"></div>
+
+      <button
+        type="button"
+        (click)="requestDelete(menuAppointment!)"
+        class="w-full px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-muted transition flex items-center gap-3"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18"></path>
+          <path d="M6 6l12 12"></path>
+        </svg>
+        Cancelar
+      </button>
+    </div>
+  }
+
   <!-- ==========================================================
        ✅ MODALES RESPONSIVE (TODOS)
-       - overlay con padding
-       - modal con max height y scroll interno
-       - botones apilados en mobile
        ========================================================== -->
 
   <!-- MODAL: Nueva Cita -->

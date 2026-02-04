@@ -68,7 +68,10 @@ export class AppointmentsListComponent implements OnInit {
   dateFilter: string = this.todayISO();
   isDatePickerOpen = false;
 
+  // ✅ DROPDOWN (igual que Patients)
   openRowMenuId: string | null = null;
+  menuPos = { top: 0, left: 0 };
+  menuAppointment: AppointmentVM | null = null;
 
   isCreateModalOpen = false;
 
@@ -113,7 +116,6 @@ export class AppointmentsListComponent implements OnInit {
 
   rows: AppointmentVM[] = [];
 
-
   async ngOnInit() {
     this.rebuildCalendar();
 
@@ -157,7 +159,6 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-
   get filteredRows(): AppointmentVM[] {
     const q = this.q.trim().toLowerCase();
 
@@ -176,7 +177,6 @@ export class AppointmentsListComponent implements OnInit {
       });
   }
 
-
   formatDateES(iso: string): string {
     if (!iso || iso.length < 10) return iso;
     const y = iso.slice(0, 4);
@@ -184,7 +184,6 @@ export class AppointmentsListComponent implements OnInit {
     const d = iso.slice(8, 10);
     return `${d}/${m}/${y}`;
   }
-
 
   private async ensureAvailabilityLoaded() {
     if (this.availability) return;
@@ -217,7 +216,6 @@ export class AppointmentsListComponent implements OnInit {
     const key = this.dowKeyFromDate(dateIso);
     return !!this.workingHours[key]?.enabled;
   }
-
 
   private parseHHmm(hhmm: string): { hh: number; mm: number } | null {
     if (!hhmm || typeof hhmm !== 'string') return null;
@@ -260,7 +258,6 @@ export class AppointmentsListComponent implements OnInit {
 
     return out;
   }
-
 
   private patientLabel(p: PatientRow): string {
     const fullName = `${p.first_names ?? ''} ${p.last_names ?? ''}`.trim();
@@ -315,10 +312,9 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-
   toggleDatePicker() {
     this.isDatePickerOpen = !this.isDatePickerOpen;
-    this.openRowMenuId = null;
+    this.closeRowMenu();
 
     if (this.isDatePickerOpen) {
       const base = this.dateFilter || this.todayISO();
@@ -401,17 +397,46 @@ export class AppointmentsListComponent implements OnInit {
     this.calendarWeeks = weeks;
   }
 
+  // =========================
+  // ✅ Row menu (MISMO PATRÓN QUE PATIENTS)
+  // =========================
+  toggleRowMenu(row: AppointmentVM, ev: MouseEvent) {
+    ev.stopPropagation();
 
-  toggleRowMenu(rowId: string) {
     this.isDatePickerOpen = false;
-    this.openRowMenuId = this.openRowMenuId === rowId ? null : rowId;
+
+    if (this.openRowMenuId === row.id) {
+      this.closeRowMenu();
+      return;
+    }
+
+    this.openRowMenuId = row.id;
+    this.menuAppointment = row;
+
+    const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+    const menuWidth = 224; // w-56 aprox (si en HTML usas w-52, pon 208)
+    const padding = 8;
+
+    let left = rect.right - menuWidth;
+    left = Math.max(padding, Math.min(left, window.innerWidth - menuWidth - padding));
+
+    this.menuPos = { top: rect.bottom + 8, left };
+    this.cdr.detectChanges();
   }
 
   closeRowMenu() {
     this.openRowMenuId = null;
+    this.menuAppointment = null;
   }
 
+  @HostListener('window:resize')
+  onResize() {
+    this.closeRowMenu();
+  }
 
+  // =========================
+  // Actions
+  // =========================
   requestDelete(row: AppointmentVM) {
     this.closeRowMenu();
     this.isDatePickerOpen = false;
@@ -454,14 +479,12 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-
   openDetailModal(row: AppointmentVM) {
     this.closeRowMenu();
     this.isDatePickerOpen = false;
 
     this.detailRow = row;
     this.isDetailModalOpen = true;
-    this.toast.info('Detalles', `Abriendo ${row.id}`);
   }
 
   closeDetailModal() {
@@ -539,7 +562,6 @@ export class AppointmentsListComponent implements OnInit {
       end_at: endAtIso,
     });
 
-
     this.isLoading = false;
 
     if (error) {
@@ -561,10 +583,9 @@ export class AppointmentsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-
   async openCreateModal() {
     this.isCreateModalOpen = true;
-    this.openRowMenuId = null;
+    this.closeRowMenu();
     this.isDatePickerOpen = false;
 
     this.formPatientQuery = '';
@@ -683,7 +704,6 @@ export class AppointmentsListComponent implements OnInit {
     await this.loadAppointments();
   }
 
-
   private async refreshCreateHourOptions(dateIso: string) {
     await this.ensureAvailabilityLoaded();
 
@@ -700,7 +720,6 @@ export class AppointmentsListComponent implements OnInit {
     await this.ensureBlocksLoaded(dateIso);
 
     const duration = this.slotMinutes ?? 30;
-
     const baseHours = this.getWorkingHoursSlotsForDate(dateIso);
 
     this.createHourOptions = baseHours.filter((hhmm) => {
@@ -830,31 +849,23 @@ export class AppointmentsListComponent implements OnInit {
     return aStart < bEnd && aEnd > bStart;
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocClick(ev: MouseEvent) {
-    const target = ev.target as HTMLElement | null;
-    if (!target) return;
-
-    const insidePopover = !!target.closest('[data-popover]');
-    if (insidePopover) return;
-
+  // ✅ MISMO CIERRE GLOBAL QUE PATIENTS
+  @HostListener('document:click')
+  onDocClick() {
     this.closeRowMenu();
-    this.closeDatePicker();
-
-    if (this.isPatientDropdownOpen) {
-      this.isPatientDropdownOpen = false;
-      this.cdr.detectChanges();
-    }
   }
 
   @HostListener('document:keydown.escape')
   onEsc() {
-    if (this.isConfirmDeleteOpen) this.closeConfirmDelete();
+    this.closeRowMenu();
+    this.closeConfirmDelete();
 
     if (this.isPatientDropdownOpen) {
       this.isPatientDropdownOpen = false;
       this.cdr.detectChanges();
     }
+
+    this.closeDatePicker();
   }
 
   private toVM(r: any): AppointmentVM {
