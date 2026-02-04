@@ -74,92 +74,12 @@
     <!-- Loading / Error -->
     @if (isLoading) {
       <div class="mt-6 space-y-4">
-        <!-- Skeleton header row -->
         <div class="rounded-2xl border border-border bg-card p-6">
-          <div class="flex items-center justify-between gap-4">
-            <div class="space-y-2">
-              <div class="h-5 w-40 rounded bg-muted animate-pulse"></div>
-              <div class="h-4 w-64 rounded bg-muted animate-pulse"></div>
-            </div>
-            <div class="hidden sm:flex items-center gap-2">
-              <div class="h-11 w-11 rounded-2xl bg-muted animate-pulse"></div>
-              <div class="h-5 w-44 rounded bg-muted animate-pulse"></div>
-              <div class="h-11 w-11 rounded-2xl bg-muted animate-pulse"></div>
-              <div class="h-11 w-16 rounded-2xl bg-muted animate-pulse"></div>
-            </div>
-          </div>
+          <div class="h-5 w-40 rounded bg-muted animate-pulse"></div>
+          <div class="mt-2 h-4 w-64 rounded bg-muted animate-pulse"></div>
         </div>
-
-        <!-- Skeleton days strip -->
-        <div class="rounded-2xl border border-border bg-card p-4">
-          <div class="flex gap-3 overflow-x-auto">
-            @for (_ of [0,1,2,3,4,5,6]; track _) {
-              <div class="min-w-[88px] sm:min-w-[96px] rounded-xl border border-border bg-background p-3">
-                <div class="h-3 w-10 rounded bg-muted animate-pulse"></div>
-                <div class="mt-2 h-6 w-8 rounded bg-muted animate-pulse"></div>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Skeleton content changes by view -->
-        @if (viewMode === 'day') {
-          <!-- Skeleton day slots -->
-          <div class="rounded-2xl border border-border bg-card overflow-hidden">
-            @for (_ of [0,1,2,3,4,5,6,7]; track _) {
-              <div class="border-b border-border p-4 sm:px-5 sm:py-4">
-                <div class="flex flex-col sm:flex-row sm:items-start sm:gap-4">
-                  <div class="h-4 w-16 rounded bg-muted animate-pulse"></div>
-
-                  <div class="mt-3 sm:mt-0 flex-1 rounded-xl border border-border bg-background p-4">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div class="space-y-2 min-w-0 flex-1">
-                        <div class="h-4 w-48 rounded bg-muted animate-pulse"></div>
-                        <div class="h-3 w-40 rounded bg-muted animate-pulse"></div>
-                        <div class="h-4 w-64 rounded bg-muted animate-pulse"></div>
-                      </div>
-
-                      <div class="flex items-center gap-2 sm:flex-col sm:items-end">
-                        <div class="h-6 w-24 rounded-full bg-muted animate-pulse"></div>
-                        <div class="flex gap-2 sm:mt-2">
-                          <div class="h-9 w-20 rounded-xl bg-muted animate-pulse"></div>
-                          <div class="h-9 w-20 rounded-xl bg-muted animate-pulse"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        @if (viewMode === 'week') {
-          <!-- Skeleton week cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
-            @for (_ of [0,1,2,3,4,5,6]; track _) {
-              <div class="rounded-2xl border border-border bg-card p-4">
-                <div class="flex items-center justify-between">
-                  <div class="space-y-2">
-                    <div class="h-3 w-10 rounded bg-muted animate-pulse"></div>
-                    <div class="h-6 w-8 rounded bg-muted animate-pulse"></div>
-                  </div>
-                  <div class="h-6 w-8 rounded-full bg-muted animate-pulse"></div>
-                </div>
-
-                <div class="mt-4 space-y-2">
-                  <div class="h-10 rounded-lg bg-muted animate-pulse"></div>
-                  <div class="h-10 rounded-lg bg-muted animate-pulse"></div>
-                  <div class="h-10 rounded-lg bg-muted animate-pulse"></div>
-                </div>
-              </div>
-            }
-          </div>
-        }
       </div>
     }
-
 
     @if (!isLoading && hasError) {
       <div class="mt-6 rounded-2xl border border-border bg-card p-6">
@@ -179,6 +99,7 @@
          DAY VIEW
          ====================== -->
     @if (!isLoading && !hasError && viewMode === 'day') {
+
       <!-- DAYS STRIP -->
       <div class="mt-6 -mx-4 px-4 sm:mx-0 sm:px-0">
         <div class="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
@@ -186,80 +107,147 @@
             <button
               type="button"
               (click)="selectDay(d.date)"
-              class="snap-start shrink-0 min-w-[88px] sm:min-w-[96px] rounded-xl border px-3 py-2 text-center transition"
+              class="snap-start shrink-0 min-w-[92px] sm:min-w-[104px] rounded-xl border px-3 py-2 text-center transition"
               [ngClass]="
                 selectedDate === d.date
                   ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background border-border hover:bg-muted'
+                  : (isDayClosed(d.date)
+                      ? 'bg-muted/60 border-border hover:bg-muted'
+                      : 'bg-background border-border hover:bg-muted')
               "
             >
               <div class="text-xs font-semibold">{{ d.weekday }}</div>
               <div class="text-lg font-bold">{{ d.day }}</div>
+
+              <div
+                class="text-[11px] mt-1 font-semibold"
+                [ngClass]="isDayClosed(d.date) ? 'text-rose-600' : 'text-muted-foreground'"
+              >
+                {{ isDayClosed(d.date) ? 'Cerrado' : 'Disponible' }}
+              </div>
             </button>
           }
         </div>
       </div>
 
-      <!-- TIME GRID -->
-      <div class="mt-6 bg-card rounded-2xl border border-border overflow-hidden">
-        @for (slot of timeSlots; track slot) {
-          @let appt = getAppointmentBySlot(slot);
+      <!-- MENSAJE SI DÍA CERRADO / BLOQUEADO COMPLETO -->
+      @if (isSelectedDayDisabled) {
+        <div class="mt-6 rounded-2xl border border-border bg-card p-6">
+          <p class="text-sm font-semibold text-foreground">No atendemos este día</p>
+          <p class="mt-1 text-sm text-muted-foreground">
+            {{ selectedDayMessage }}
+          </p>
+        </div>
+      } @else {
 
-          <div class="border-b border-border p-4 sm:px-5 sm:py-4">
-            <div class="flex flex-col sm:flex-row sm:items-start sm:gap-4">
-              <div class="text-sm font-semibold text-foreground sm:w-16">
-                {{ slot }}
-              </div>
+        <!-- TIME GRID -->
+        <div class="mt-6 bg-card rounded-2xl border border-border overflow-hidden">
+          @for (slot of timeSlots; track slot) {
+            @let appt = getAppointmentBySlot(slot);
+            @let meta = getSlotMeta(slot);
 
-              @if (appt) {
-                <div
-                  class="mt-3 sm:mt-0 flex-1 rounded-xl border p-4"
-                  [ngClass]="{
-                    'bg-emerald-50 border-emerald-200': appt.status === 'Confirmada',
-                    'bg-amber-50 border-amber-200': appt.status === 'Pendiente',
-                    'bg-rose-50 border-rose-200': appt.status === 'Cancelada',
-                    'bg-slate-50 border-slate-200': appt.status === 'Completada'
-                  }"
-                >
-                  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div class="min-w-0">
-                      <p class="font-semibold text-foreground truncate">
-                        {{ appt.patientName }}
-                      </p>
-                      <p class="text-xs text-muted-foreground">
-                        DNI {{ appt.dni }} · {{ appt.phone }}
-                      </p>
-                      <p class="mt-1 text-sm text-foreground">
-                        {{ appt.reason }}
-                      </p>
-                    </div>
+            <div class="border-b border-border p-4 sm:px-5 sm:py-4">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:gap-4">
+                <!-- HORA -->
+                <div class="flex items-center justify-between sm:block sm:w-16">
+                  <div class="text-sm font-semibold text-foreground">
+                    {{ slot }}
+                  </div>
 
-                    <div class="flex items-center gap-2 sm:flex-col sm:items-end">
-                      <span
-                        class="px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap"
-                        [ngClass]="{
-                          'bg-emerald-100 text-emerald-700': appt.status === 'Confirmada',
-                          'bg-amber-100 text-amber-700': appt.status === 'Pendiente',
-                          'bg-rose-100 text-rose-700': appt.status === 'Cancelada',
-                          'bg-slate-100 text-slate-700': appt.status === 'Completada'
-                        }"
-                      >
-                        {{ appt.status }}
-                      </span>
+                  <!-- ✅ BOTÓN + (solo si es creable) -->
+                  @if (canCreateOnSlot(slot)) {
+                    <button
+                      type="button"
+                      class="sm:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+                      (click)="openCreateModalFromSlot(slot)"
+                      aria-label="Agregar cita"
+                    >
+                      <span class="text-lg font-bold">+</span>
+                    </button>
+                  }
+                </div>
 
+                @if (appt) {
+                  <!-- CARD CITA -->
+                  <div
+                    class="mt-3 sm:mt-0 flex-1 rounded-xl border p-4"
+                    [ngClass]="{
+                      'bg-emerald-50 border-emerald-200': appt.status === 'Confirmada',
+                      'bg-amber-50 border-amber-200': appt.status === 'Pendiente',
+                      'bg-rose-50 border-rose-200': appt.status === 'Cancelada',
+                      'bg-slate-50 border-slate-200': appt.status === 'Completada'
+                    }"
+                  >
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div class="min-w-0">
+                        <p class="font-semibold text-foreground truncate">{{ appt.patientName }}</p>
+                        <p class="text-xs text-muted-foreground">DNI {{ appt.dni }} · {{ appt.phone }}</p>
+                        <p class="mt-1 text-sm text-foreground">{{ appt.reason }}</p>
+                      </div>
 
+                      <div class="flex items-center gap-2 sm:flex-col sm:items-end">
+                        <span
+                          class="px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap"
+                          [ngClass]="{
+                            'bg-emerald-100 text-emerald-700': appt.status === 'Confirmada',
+                            'bg-amber-100 text-amber-700': appt.status === 'Pendiente',
+                            'bg-rose-100 text-rose-700': appt.status === 'Cancelada',
+                            'bg-slate-100 text-slate-700': appt.status === 'Completada'
+                          }"
+                        >
+                          {{ appt.status }}
+                        </span>
+
+                        <!-- ✅ botón + desktop (en el lado derecho, por si quieres también) -->
+                        @if (canCreateOnSlot(slot)) {
+                          <button
+                            type="button"
+                            class="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+                            (click)="openCreateModalFromSlot(slot)"
+                            aria-label="Agregar cita"
+                          >
+                            <span class="text-lg font-bold">+</span>
+                          </button>
+                        }
+                      </div>
                     </div>
                   </div>
-                </div>
-              } @else {
-                <div class="mt-2 sm:mt-0 flex-1 text-sm text-muted-foreground">
-                  Disponible
-                </div>
-              }
+                } @else {
+                  <!-- SIN CITA -->
+                  @if (meta.blocked) {
+                    <div class="mt-2 sm:mt-0 flex-1">
+                      <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-rose-700">Bloqueado</p>
+                        @if (meta.reason) {
+                          <p class="text-xs text-rose-700/80 mt-1">{{ meta.reason }}</p>
+                        } @else {
+                          <p class="text-xs text-rose-700/80 mt-1">Este horario no está disponible.</p>
+                        }
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="mt-2 sm:mt-0 flex-1 flex items-center justify-between gap-3">
+                      <div class="text-sm text-muted-foreground">Disponible</div>
+
+                      <!-- ✅ botón + desktop para slot libre -->
+                      @if (canCreateOnSlot(slot)) {
+                        <button
+                          type="button"
+                          class="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background hover:bg-muted transition"
+                          (click)="openCreateModalFromSlot(slot)"
+                          aria-label="Agregar cita"
+                        >
+                          <span class="text-lg font-bold">+</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                }
+              </div>
             </div>
-          </div>
-        }
-      </div>
+          }
+        </div>
+      }
     }
 
     <!-- ======================
@@ -280,17 +268,23 @@
                 <p class="text-lg font-semibold text-foreground">{{ d.day }}</p>
               </div>
 
-              @if (hasAppointmentsForDate(d.date)) {
-                <span class="text-xs font-semibold px-2 py-1 rounded-full bg-muted text-foreground">
-                  {{ getAppointmentsForDate(d.date).length }}
-                </span>
-              }
+              <div class="flex items-center gap-2">
+                @if (isDayClosed(d.date)) {
+                  <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-rose-100 text-rose-700">
+                    Cerrado
+                  </span>
+                }
+
+                @if (hasAppointmentsForDate(d.date)) {
+                  <span class="text-xs font-semibold px-2 py-1 rounded-full bg-muted text-foreground">
+                    {{ getAppointmentsForDate(d.date).length }}
+                  </span>
+                }
+              </div>
             </div>
 
             @if (!hasAppointmentsForDate(d.date)) {
-              <p class="text-xs text-muted-foreground text-center">
-                Sin citas
-              </p>
+              <p class="text-xs text-muted-foreground text-center">Sin citas</p>
             }
 
             @for (a of getAppointmentsForDate(d.date); track a.id) {
@@ -313,4 +307,138 @@
     }
 
   </div>
+
+  <!-- ======================
+       MODAL CREAR CITA (RESPONSIVE)
+       ====================== -->
+  @if (isCreateModalOpen) {
+    <div class="fixed inset-0 z-50">
+      <!-- backdrop -->
+      <div class="absolute inset-0 bg-black/40" (click)="closeCreateModal()"></div>
+
+      <!-- panel -->
+      <div class="absolute inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full sm:max-w-xl bg-card border border-border rounded-t-3xl sm:rounded-3xl shadow-xl max-h-[92vh] overflow-hidden">
+          <!-- header -->
+          <div class="flex items-center justify-between p-4 sm:p-5 border-b border-border">
+            <div>
+              <p class="text-lg font-semibold text-foreground">Agregar cita</p>
+              <p class="text-xs text-muted-foreground">
+                {{ formatDateES(formDate) }} · {{ formHour || '—' }}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-background hover:bg-muted transition"
+              (click)="closeCreateModal()"
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- content -->
+          <div class="p-4 sm:p-5 space-y-4 overflow-auto max-h-[72vh]">
+            <!-- paciente -->
+            <div class="relative" data-popover>
+              <label class="text-xs font-semibold text-foreground">Paciente</label>
+              <input
+                type="text"
+                class="mt-1 w-full h-11 rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                placeholder="Buscar por nombre o DNI…"
+                [(ngModel)]="formPatientQuery"
+                (focus)="onPatientFocus()"
+                (input)="onPatientInputChange()"
+              />
+
+              @if (isPatientDropdownOpen) {
+                <div class="absolute z-50 mt-2 w-full rounded-2xl border border-border bg-card shadow-lg overflow-hidden">
+                  @if (isPatientSearching) {
+                    <div class="p-3 text-sm text-muted-foreground">Buscando…</div>
+                  } @else {
+                    @if (patientResults.length === 0) {
+                      <div class="p-3 text-sm text-muted-foreground">Sin resultados</div>
+                    } @else {
+                      @for (p of patientResults; track p.id) {
+                        <button
+                          type="button"
+                          class="w-full text-left px-4 py-3 hover:bg-muted transition"
+                          (click)="selectPatient(p)"
+                        >
+                          <p class="text-sm font-semibold text-foreground">
+                            {{ (p.first_names || '') + ' ' + (p.last_names || '') }}
+                          </p>
+                          <p class="text-xs text-muted-foreground">DNI {{ p.dni }}</p>
+                        </button>
+                      }
+                    }
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- fecha/hora -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-semibold text-foreground">Fecha</label>
+                <input
+                  type="date"
+                  class="mt-1 w-full h-11 rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  [(ngModel)]="formDate"
+                  (change)="onCreateDateChange()"
+                />
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-foreground">Hora</label>
+                <select
+                  class="mt-1 w-full h-11 rounded-2xl border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  [(ngModel)]="formHour"
+                >
+                  @for (h of createHourOptions; track h) {
+                    <option [value]="h">{{ h }}</option>
+                  }
+                </select>
+                @if (createHourOptions.length === 0) {
+                  <p class="mt-1 text-xs text-rose-600">No hay horarios disponibles para ese día.</p>
+                }
+              </div>
+            </div>
+
+
+            <!-- notas -->
+            <div>
+              <label class="text-xs font-semibold text-foreground">Notas (opcional)</label>
+              <textarea
+                class="mt-1 w-full min-h-[96px] rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                placeholder="Información adicional…"
+                [(ngModel)]="formNotes"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- footer -->
+          <div class="p-4 sm:p-5 border-t border-border flex flex-col sm:flex-row gap-3 sm:justify-end">
+            <button
+              type="button"
+              class="h-11 rounded-2xl px-4 text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+              (click)="closeCreateModal()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              class="h-11 rounded-2xl px-4 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition disabled:opacity-60"
+              [disabled]="isLoading || !formDate || !formHour"
+              (click)="createAppointment()"
+            >
+              Guardar cita
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 </section>
