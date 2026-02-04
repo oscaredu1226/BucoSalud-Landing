@@ -290,7 +290,8 @@
   <!-- ✅ Dropdown fixed (teleport) -->
   @if (openRowMenuId && menuPatient) {
     <div
-      class="fixed z-[9999] w-52 rounded-2xl border border-border bg-card shadow-lg overflow-hidden"
+      class="fixed z-[9999] w-52 rounded-2xl border border-border bg-card shadow-lg overflow-hidden
+             max-h-[calc(100vh-16px)] overflow-auto"
       [style.top.px]="menuPos.top"
       [style.left.px]="menuPos.left"
       data-popover
@@ -341,8 +342,6 @@
 
   <!-- =========================
        MODALES (100% responsive)
-       - overlay + safe padding
-       - contenedor: max-h + overflow-y-auto
        ========================= -->
 
   <!-- MODAL: Nuevo Paciente -->

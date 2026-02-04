@@ -34,22 +34,17 @@ export class PatientsListComponent implements OnInit {
     private readonly cdr: ChangeDetectorRef
   ) {}
 
-  // ===== State =====
   loading = false;
 
-  // skeleton helpers
   readonly skeletonRows = Array.from({ length: 6 });
   readonly skeletonCards = Array.from({ length: 5 });
 
-  // search
   query = '';
 
-  // dropdown
   openRowMenuId: string | null = null;
   menuPos = { top: 0, left: 0 };
   menuPatient: PatientRowVM | null = null;
 
-  // modals
   isCreateModalOpen = false;
   isDetailModalOpen = false;
   isEditModalOpen = false;
@@ -61,7 +56,6 @@ export class PatientsListComponent implements OnInit {
 
   selected: PatientRowVM | null = null;
 
-  // forms
   formFullName = '';
   formDni = '';
   formPhone = '';
@@ -122,9 +116,7 @@ export class PatientsListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // =========================
-  // Computed
-  // =========================
+
   get filtered(): PatientRowVM[] {
     const q = this.query.trim().toLowerCase();
     if (!q) return this.patients;
@@ -137,9 +129,7 @@ export class PatientsListComponent implements OnInit {
 
   trackById = (_: number, p: PatientRowVM) => p.id;
 
-  // =========================
-  // UI helpers
-  // =========================
+
   formatLastVisit(iso?: string): string {
     if (!iso) return 'Sin citas';
     const d = new Date(iso);
@@ -149,9 +139,7 @@ export class PatientsListComponent implements OnInit {
     return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   }
 
-  // =========================
-  // Row menu
-  // =========================
+
   toggleRowMenu(p: PatientRowVM, ev: MouseEvent) {
     ev.stopPropagation();
 
@@ -164,13 +152,28 @@ export class PatientsListComponent implements OnInit {
     this.menuPatient = p;
 
     const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+
     const menuWidth = 208;
     const padding = 8;
+    const gap = 12;
+
+    const menuHeight = 120;
 
     let left = rect.right - menuWidth;
     left = Math.max(padding, Math.min(left, window.innerWidth - menuWidth - padding));
 
-    this.menuPos = { top: rect.bottom + 8, left };
+    const belowTop = rect.bottom + gap;
+
+    const wouldOverflowBottom = belowTop + menuHeight > window.innerHeight - padding;
+
+    let top = belowTop;
+    if (wouldOverflowBottom) {
+      top = rect.top - gap - menuHeight;
+    }
+
+    top = Math.max(padding, Math.min(top, window.innerHeight - menuHeight - padding));
+
+    this.menuPos = { top, left };
     this.cdr.detectChanges();
   }
 
@@ -184,9 +187,12 @@ export class PatientsListComponent implements OnInit {
     this.closeRowMenu();
   }
 
-  // =========================
-  // Modals
-  // =========================
+  @HostListener('window:scroll')
+  onScroll() {
+    this.closeRowMenu();
+  }
+
+
   openCreateModal() {
     this.closeRowMenu();
     this.isCreateModalOpen = true;
@@ -325,9 +331,6 @@ export class PatientsListComponent implements OnInit {
     this.toast.success('Paciente eliminado', this.pendingDelete!.fullName);
   }
 
-  // =========================
-  // Global listeners
-  // =========================
   @HostListener('document:click')
   onDocClick() {
     this.closeRowMenu();
@@ -339,9 +342,7 @@ export class PatientsListComponent implements OnInit {
     this.closeConfirmDelete();
   }
 
-  // =========================
-  // Mapping
-  // =========================
+
   private toVM(r: PatientRow): PatientRowVM {
     return {
       id: r.id,
