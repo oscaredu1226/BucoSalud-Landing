@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, QueryList, ViewChildren } from '@angular/core';
+
 type Step = {
   number: string;
   icon: 'message' | 'clipboard' | 'calendar' | 'sparkles';
@@ -6,14 +7,14 @@ type Step = {
   description: string;
   highlight: string;
 };
+
 @Component({
   selector: 'app-process-section',
   imports: [],
   templateUrl: './process-section.html',
   standalone: true,
-
 })
-export class ProcessSection {
+export class ProcessSection implements AfterViewInit {
   steps: Step[] = [
     {
       number: '01',
@@ -49,12 +50,71 @@ export class ProcessSection {
     },
   ];
 
+  @ViewChildren('revealText', { read: ElementRef })
+  revealTexts!: QueryList<ElementRef<HTMLElement>>;
+
+  @ViewChildren('revealImg', { read: ElementRef })
+  revealImgs!: QueryList<ElementRef<HTMLElement>>;
+
+  private io?: IntersectionObserver;
+
+  ngAfterViewInit(): void {
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+    if (prefersReduced) return;
+
+    const init = (el: HTMLElement, from: 'left' | 'right', delayMs = 0) => {
+      el.classList.add(
+        'opacity-0',
+        'blur-sm',
+        'transition-all',
+        'duration-700',
+        'ease-out',
+        'will-change-transform'
+      );
+
+      el.classList.add(from === 'left' ? '-translate-x-6' : 'translate-x-6');
+
+      if (delayMs > 0) el.style.transitionDelay = `${delayMs}ms`;
+    };
+
+    this.io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const el = entry.target as HTMLElement;
+
+          if (!entry.isIntersecting) continue;
+
+          el.classList.remove('opacity-0', 'blur-sm', '-translate-x-6', 'translate-x-6');
+          el.classList.add('opacity-100', 'blur-0');
+
+          this.io?.unobserve(el);
+        }
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '0px 0px -10% 0px',
+      }
+    );
+
+    this.revealTexts.forEach((ref, i) => {
+      const el = ref.nativeElement;
+      const from = i % 2 === 0 ? 'left' : 'right';
+      init(el, from, 0);
+      this.io?.observe(el);
+    });
+
+    this.revealImgs.forEach((ref, i) => {
+      const el = ref.nativeElement;
+      const from = i % 2 === 0 ? 'right' : 'left';
+      init(el, from, 120);
+      this.io?.observe(el);
+    });
+  }
 
   scrollToSection(id: string) {
     const el = document.getElementById(id);
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-
 
   firstWord(title: string): string {
     return title.split(' ')[0] ?? title;
