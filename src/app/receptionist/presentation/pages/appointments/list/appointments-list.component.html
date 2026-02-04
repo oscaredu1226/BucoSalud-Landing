@@ -275,7 +275,7 @@
                       'bg-destructive/15 text-destructive border-destructive/30': row.status === 'cancelled'
                     }"
                   >
-                    {{ row.status }}
+                    {{ statusLabel(row.status) }}
                   </span>
                 </div>
 
@@ -405,7 +405,7 @@
                             'bg-destructive/15 text-destructive border-destructive/30': row.status === 'cancelled'
                           }"
                         >
-                          {{ row.status }}
+                          {{ statusLabel(row.status) }}
                         </span>
                       </td>
 
@@ -439,6 +439,7 @@
     }
   </div>
 
+  <!-- ✅ Dropdown fixed -->
   @if (openRowMenuId && menuAppointment) {
     <div
       class="fixed z-[9999] w-56 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
@@ -464,7 +465,6 @@
         (click)="openRescheduleModal(menuAppointment!)"
         class="w-full px-4 py-3 text-left text-sm font-semibold text-foreground hover:bg-muted transition flex items-center gap-3"
       >
-        <!-- ✅ reloj -->
         <svg class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
           <path d="M12 6v6l4 2"></path>
@@ -489,7 +489,7 @@
   }
 
   <!-- ==========================================================
-       ✅ MODALES RESPONSIVE (TODOS)
+       ✅ MODALES RESPONSIVE
        ========================================================== -->
 
   <!-- MODAL: Nueva Cita -->
@@ -530,7 +530,7 @@
             </button>
           </div>
 
-          <!-- body (scroll) -->
+          <!-- body -->
           <div class="px-4 sm:px-7 py-5 sm:py-6 overflow-y-auto">
             <div class="grid gap-5">
               <div class="relative" data-popover>
@@ -701,7 +701,9 @@
                 <div class="rounded-2xl border border-border bg-background p-4">
                   <div class="text-xs text-muted-foreground">Contacto</div>
                   <div class="mt-1 font-semibold text-foreground">{{ detailRow?.phone || '—' }}</div>
-                  <div class="mt-1 text-sm text-muted-foreground">Estado: {{ detailRow?.status || '—' }}</div>
+                  <div class="mt-1 text-sm text-muted-foreground">
+                    Estado: {{ detailRow?.status ? statusLabel(detailRow!.status) : '—' }}
+                  </div>
                 </div>
               </div>
 

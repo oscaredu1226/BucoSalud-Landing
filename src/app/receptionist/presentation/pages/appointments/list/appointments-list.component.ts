@@ -68,7 +68,7 @@ export class AppointmentsListComponent implements OnInit {
   dateFilter: string = this.todayISO();
   isDatePickerOpen = false;
 
-  // ✅ DROPDOWN (igual que Patients)
+  // ✅ DROPDOWN
   openRowMenuId: string | null = null;
   menuPos = { top: 0, left: 0 };
   menuAppointment: AppointmentVM | null = null;
@@ -115,6 +115,18 @@ export class AppointmentsListComponent implements OnInit {
   readonly weekLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
   rows: AppointmentVM[] = [];
+
+  // ✅ STATUS LABELS (UI en español)
+  readonly statusLabels: Record<AppointmentStatus, string> = {
+    pending: 'Pendiente',
+    confirmed: 'Confirmada',
+    cancelled: 'Cancelada',
+  };
+
+  statusLabel(s: AppointmentStatus | 'all' | null | undefined): string {
+    if (!s || s === 'all') return 'Todos';
+    return this.statusLabels[s] ?? String(s);
+  }
 
   async ngOnInit() {
     this.rebuildCalendar();
@@ -398,7 +410,7 @@ export class AppointmentsListComponent implements OnInit {
   }
 
   // =========================
-  // ✅ Row menu (MISMO PATRÓN QUE PATIENTS)
+  // ✅ Row menu (posicion inteligente)
   // =========================
   toggleRowMenu(row: AppointmentVM, ev: MouseEvent) {
     ev.stopPropagation();
@@ -414,13 +426,26 @@ export class AppointmentsListComponent implements OnInit {
     this.menuAppointment = row;
 
     const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
-    const menuWidth = 224; // w-56 aprox (si en HTML usas w-52, pon 208)
+
+    const menuWidth = 224;
     const padding = 8;
+    const gap = 12;
+    const menuHeight = 120;
 
     let left = rect.right - menuWidth;
     left = Math.max(padding, Math.min(left, window.innerWidth - menuWidth - padding));
 
-    this.menuPos = { top: rect.bottom + 8, left };
+    const belowTop = rect.bottom + gap;
+    const wouldOverflowBottom = belowTop + menuHeight > window.innerHeight - padding;
+
+    let top = belowTop;
+    if (wouldOverflowBottom) {
+      top = rect.top - gap - menuHeight;
+    }
+
+    top = Math.max(padding, Math.min(top, window.innerHeight - menuHeight - padding));
+
+    this.menuPos = { top, left };
     this.cdr.detectChanges();
   }
 
@@ -431,6 +456,11 @@ export class AppointmentsListComponent implements OnInit {
 
   @HostListener('window:resize')
   onResize() {
+    this.closeRowMenu();
+  }
+
+  @HostListener('window:scroll')
+  onScroll() {
     this.closeRowMenu();
   }
 
@@ -498,7 +528,6 @@ export class AppointmentsListComponent implements OnInit {
 
     this.rescheduleRow = row;
     this.rescheduleDate = row.date;
-
     this.rescheduleTime = row.time || '';
 
     await this.refreshRescheduleHourOptions(this.rescheduleDate);
@@ -849,7 +878,7 @@ export class AppointmentsListComponent implements OnInit {
     return aStart < bEnd && aEnd > bStart;
   }
 
-  // ✅ MISMO CIERRE GLOBAL QUE PATIENTS
+  // ✅ CIERRE GLOBAL
   @HostListener('document:click')
   onDocClick() {
     this.closeRowMenu();
