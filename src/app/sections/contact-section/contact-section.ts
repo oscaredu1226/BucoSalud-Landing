@@ -7,7 +7,7 @@ import {
   FormControl,
 } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { PatientHttpRepository } from '../../receptionist/infrastructure/http/repositories/patient.http-repository';
+import { environment } from '../../../environments/environment';
 import { AppointmentHttpRepository } from '../../receptionist/infrastructure/http/repositories/appointment.http-repository';
 
 type ContactItem = {
@@ -56,7 +56,6 @@ export class ContactSection {
     },
   ];
 
-  // ✅ ahora se carga dinámico por fecha
   availableHours: string[] = [];
   isLoadingHours = false;
 
@@ -71,7 +70,7 @@ export class ContactSection {
   constructor(
     private fb: FormBuilder,
     private sanitizer: DomSanitizer,
-    private readonly patientsRepo: PatientHttpRepository,
+    // 👇 lo dejo SOLO para cargar horas disponibles (ya no se usa para el landing, pero lo dejo para no romper nada)
     private readonly apptRepo: AppointmentHttpRepository
   ) {
     this.form = this.fb.nonNullable.group({
@@ -95,22 +94,37 @@ export class ContactSection {
       time: this.fb.nonNullable.control('', [Validators.required]),
     });
 
-    // ✅ Cuando cambie la fecha, recarga horas reales
+    // ✅ Cuando cambie la fecha, carga horas DESDE EDGE (landing-availability)
     this.form.controls.date.valueChanges.subscribe(async (date) => {
       this.submitError = null;
       this.submitOk = null;
 
-      // reset de hora seleccionada y lista
       this.form.controls.time.setValue('');
       this.availableHours = [];
 
       if (!date) return;
 
       try {
-        await this.loadAvailableHoursForDate(date);
+        this.isLoadingHours = true;
+
+        const res = await fetch(`${environment.supabaseUrl}/functions/v1/landing-availability`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date,
+            tzOffsetMinutes: new Date().getTimezoneOffset(),
+          }),
+        });
+
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.error || 'No se pudo cargar disponibilidad.');
+
+        this.availableHours = data?.availableHours ?? [];
       } catch (e: any) {
         this.availableHours = [];
         this.submitError = e?.message ?? 'No se pudo cargar disponibilidad.';
+      } finally {
+        this.isLoadingHours = false;
       }
     });
 
@@ -144,20 +158,18 @@ export class ContactSection {
   }
 
   // =========================
-  // DISPONIBILIDAD (como crear citas)
+  // DISPONIBILIDAD (ESTO YA NO SE USA EN LANDING, lo dejo para no romper nada)
   // =========================
   private async loadAvailableHoursForDate(dateYYYYMMDD: string) {
     this.isLoadingHours = true;
 
     try {
-      // 1) settings (slot + working_hours)
       const { data: settings, error: sErr } = await this.apptRepo.getAvailabilitySettings();
       if (sErr) throw sErr;
 
       const slotMinutes = settings?.slot_minutes ?? 60;
       const workingHours = (settings?.working_hours ?? null) as WorkingHours | null;
 
-      // 2) si no hay working_hours, no rompas: queda vacío (o si quieres, fallback)
       if (!workingHours) {
         this.availableHours = [];
         return;
@@ -166,7 +178,6 @@ export class ContactSection {
       const key = this.dowKeyFromDate(dateYYYYMMDD);
       const dayCfg = workingHours[key];
 
-      // 3) si el día está deshabilitado => 0 horas
       if (!dayCfg || !dayCfg.enabled) {
         this.availableHours = [];
         return;
@@ -179,7 +190,6 @@ export class ContactSection {
         return;
       }
 
-      // 4) rango del día en hora local -> ISO UTC
       const [y, m, d] = dateYYYYMMDD.split('-').map(Number);
       const dayStartLocal = new Date(y, m - 1, d, 0, 0, 0, 0);
       const dayEndLocal = new Date(y, m - 1, d, 23, 59, 59, 999);
@@ -187,7 +197,6 @@ export class ContactSection {
       const fromIso = dayStartLocal.toISOString();
       const toIso = dayEndLocal.toISOString();
 
-      // 5) traer citas y bloqueos del día
       const [
         { data: appts, error: aErr },
         { data: blocks, error: bErr },
@@ -202,7 +211,6 @@ export class ContactSection {
       const appointments = appts ?? [];
       const blocked = blocks ?? [];
 
-      // 6) generar slots candidatos según working_hours
       const slots: { label: string; startIso: string; endIso: string }[] = [];
 
       const workStartLocal = new Date(y, m - 1, d, start.hh, start.mm, 0, 0);
@@ -216,7 +224,6 @@ export class ContactSection {
         const slotStart = new Date(cursor);
         const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60_000);
 
-        // ✅ no permitas que el slot termine después del cierre
         if (slotEnd.getTime() > workEndBoundary.getTime()) break;
 
         const label =
@@ -230,13 +237,11 @@ export class ContactSection {
         });
       }
 
-      // 7) overlap helper
       const overlaps = (aStart: string, aEnd: string, bStart: string, bEnd: string) => {
         return new Date(aStart).getTime() < new Date(bEnd).getTime()
           && new Date(aEnd).getTime() > new Date(bStart).getTime();
       };
 
-      // 8) filtrar slots ocupados por citas o bloqueos
       const free = slots.filter((slot) => {
         const occupiedByAppt = appointments.some((r: any) =>
           overlaps(r.start_at, r.end_at, slot.startIso, slot.endIso)
@@ -256,100 +261,66 @@ export class ContactSection {
   }
 
   // =========================
-  // SUBMIT (igual que lo tienes)
+  // SUBMIT (EDGE FUNCTION)
   // =========================
   async onSubmit() {
     this.submitted = true;
     this.submitError = null;
     this.submitOk = null;
 
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     this.isSubmitting = true;
 
     try {
       const v = this.form.getRawValue();
 
-      const dni = v.dni.trim();
-      const first_names = v.name.trim();
-      const last_names = v.lastName.trim();
-      const phone = v.phone.trim();
+      const payload = {
+        first_names: v.name.trim(),
+        last_names: v.lastName.trim(),
+        dni: v.dni.trim(),
+        phone: v.phone.trim(),
+        date: v.date,
+        time: v.time,
+        tzOffsetMinutes: new Date().getTimezoneOffset(),
+        website: '',
+      };
 
-      const { data: existing, error: findErr } = await this.patientsRepo.findByDni(dni);
-      if (findErr) throw findErr;
-
-      let patientId: string;
-      if (existing?.id) {
-        patientId = existing.id;
-      } else {
-        const { data: created, error: createErr } = await this.patientsRepo.create({
-          first_names,
-          last_names,
-          dni,
-          phone,
-          email: null,
-          notes: 'Creado desde landing',
-        });
-
-        if (createErr) throw createErr;
-        if (!created?.id) throw new Error('No se pudo crear el paciente.');
-        patientId = created.id;
-      }
-
-      const { data: settings, error: sErr } = await this.apptRepo.getAvailabilitySettings();
-      if (sErr) throw sErr;
-      const slotMinutes = settings?.slot_minutes ?? 60;
-
-      const [y, m, d] = v.date.split('-').map(Number);
-      const [hh, mm] = v.time.split(':').map(Number);
-
-      const startLocal = new Date(y, m - 1, d, hh, mm, 0, 0);
-      if (Number.isNaN(startLocal.getTime())) {
-        throw new Error('Fecha u hora inválida.');
-      }
-
-      const endLocal = new Date(startLocal.getTime() + slotMinutes * 60_000);
-
-      const startIso = startLocal.toISOString();
-      const endIso = endLocal.toISOString();
-
-      const { data: blocked, error: bErr } = await this.apptRepo.listBlockedSlotsByRange(startIso, endIso, 1);
-      if (bErr) throw bErr;
-      if ((blocked ?? []).length > 0) {
-        this.submitError = 'Ese horario está bloqueado. Elige otra hora.';
-        return;
-      }
-
-      const { data: overlap, error: oErr } = await this.apptRepo.hasOverlappingAppointment(startIso, endIso);
-      if (oErr) throw oErr;
-      if (overlap) {
-        this.submitError = 'Ese horario ya está reservado. Elige otra hora.';
-        return;
-      }
-
-      const { data: createdAppt, error: cErr } = await this.apptRepo.create({
-        patient_id: patientId,
-        start_at: startIso,
-        end_at: endIso,
-        status: 'confirmed',
-        notes: 'Cita solicitada desde landing',
+      const res = await fetch(`${environment.supabaseUrl}/functions/v1/landing-booking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-      if (cErr) throw cErr;
-      if (!createdAppt?.id) throw new Error('No se pudo crear la cita.');
+      const data = await res.json().catch(() => null);
 
+      if (!res.ok) {
+        if (data?.error === 'SLOT_TAKEN') throw new Error('Ese horario ya fue reservado. Elige otra hora.');
+        if (data?.error === 'SLOT_BLOCKED') throw new Error('Ese horario no está disponible. Elige otra hora.');
+        throw new Error(data?.error || 'No se pudo registrar la cita.');
+      }
+
+      this.submitError = null;
       this.submitOk = '¡Listo! Tu solicitud de cita fue registrada.';
-      this.form.reset({
-        name: '',
-        lastName: '',
-        dni: '',
-        phone: '+51 ',
-        date: '',
-        time: '',
-      });
-      this.availableHours = [];
-      this.submitted = false;
+
+      setTimeout(() => {
+        this.form.reset({
+          name: '',
+          lastName: '',
+          dni: '',
+          phone: '+51 ',
+          date: '',
+          time: '',
+        });
+        this.availableHours = [];
+        this.submitted = false;
+      }, 100);
+
     } catch (e: any) {
+      this.submitOk = null;
       this.submitError = e?.message ?? 'Ocurrió un error al registrar la cita.';
     } finally {
       this.isSubmitting = false;
